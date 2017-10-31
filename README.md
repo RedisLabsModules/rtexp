@@ -1,9 +1,9 @@
-#Redis Labs Realtime-Expiration Redis Module Development Proposal#
-##General:##
+# Redis Labs Realtime-Expiration Redis Module Development Proposal
+## General:
 This project will include the design and development of a Redis Module to simplify, improve and extend the expiration mechanism of redis elements for real-time (and other) applications, as defined by Redis Labs and their clients.
 As this project does not include many unknown-unknown elements Tamar Labs propose a fix-price model. 
 	This proposal refers only to the phase one as described in the specification document below. Sub-element expiration will be developed as phase two of this project and will include a reassessment of effort.   
-##SOW:##
+## SOW:
 The design will be in accordance with the the specification document below. The following is a summation of said document.
 The API will follow the redis expiration API, denoting Real-Time with R as the prefix.
 This module will include the commands for the following operations:
