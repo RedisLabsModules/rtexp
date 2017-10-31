@@ -14,6 +14,8 @@ This module will include the commands for the following operations:
 5. RSETEX {key} {value} {ttl}
 6. REXECEX {key} {ttl} {....}
 The RUNEXPIRE command will serve to declare re-expiring or un-expiring a key explicitly.
+
 The new commands will provide expiration notifications using normal keyspace. 
-The new command will provide no guarantees of deduplication with normal expiration mechanisms.
+
+The new commands will provide no guarantees of deduplication with normal expiration mechanisms.
 OPTIONAL: Pending the introduction of command hooks to redis, completely replace the current set of redis expiration commands.
