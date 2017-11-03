@@ -4,9 +4,9 @@
  */
 #include "rtexp_store.h"
 
-#include "heap.h"
-#include "trie.h"
-#include "milliseconds_time.h"
+#include "trie/triemap.h"
+#include "util/heap.h"
+#include "util/millisecond_time.h"
 
 #include <time.h>
 
@@ -35,14 +35,14 @@ int _cmp_node(const RTXElementNode* node_a, const RTXElementNode* node_b, const 
 /*
  * @return True if node has a valid version
  */
-bool _is_valid_node(RTXStore* store, RTXElementNode* node) {
+int _is_valid_node(RTXStore* store, RTXElementNode* node) {
   if (node == NULL) {
-    return false;
+    return 0;
   }
   TrieMap* t = store->element_node_map;
   char* key = node->key;
   RTXElementNode* stored_node = TrieMap_Find(t, key, strlen(key));
-  return (node->version == stored_node->version)
+  return (node->version == stored_node->version);
 }
 
 /*
@@ -52,7 +52,7 @@ RTXElementNode* _peek_next(RTXStore* store) {
   heap_t* h = store->sorted_keys;
   while (heap_count(h) != 0) {
     RTXElementNode* node = heap_peek(h);
-    if (_is_valid_node(node)) {
+    if (_is_valid_node(store, node)) {
       return node;
     } else {
       heap_poll(h);
@@ -65,16 +65,12 @@ RTXElementNode* _peek_next(RTXStore* store) {
  *     CONSTRUCTORS
  ***************************/
 RTXElementNode* newRTXElementNode(char* key, mtime_t timestamp_ms, int version) {
-  RTXElementNode node = {.char* key = key, .expiration = timestamp_ms, .version = version};
+  RTXElementNode node = {.key = key, .expiration = timestamp_ms, .version = version};
   return &node;
 }
 
-RTXElementNode* newRTXElementNode(char* key, mtime_t timestamp_ms) {
-  return newRTXElementNode(key, timestamp_ms, 0);
-}
-
 RTXStore* newRTXStore(void) {
-  RTXStore store = {.sorted_keys = heap_new(_cmp_node), .element_node_map = NewTrieMap()};
+  RTXStore store = {.sorted_keys = heap_new(_cmp_node, NULL), .element_node_map = NewTrieMap()};
   return &store;
 }
 
@@ -88,8 +84,8 @@ RTXStore* newRTXStore(void) {
  */
 int set_element_exp(RTXStore* store, char* key, mtime_t ttl_ms) {
   TrieMap* t = store->element_node_map;
-  timestamp_ms = current_time_ms() + ttl_ms RTXElementNode* new_node =
-                     newRTXElementNode(key, timestamp_ms);
+  mtime_t timestamp_ms = current_time_ms() + ttl_ms;
+  RTXElementNode* new_node = newRTXElementNode(key, timestamp_ms, 0);
   int trie_result = TrieMap_Add(t, key, strlen(key), new_node, _trie_node_updater);
 
   if (trie_result == 0) {  // we replaced an existing element
@@ -115,9 +111,9 @@ mtime_t get_element_exp(RTXStore* store, char* key) {
   TrieMap* t = store->element_node_map;
   RTXElementNode* element_node = TrieMap_Find(t, key, strlen(key));
   if (element_node != NULL && element_node != TRIEMAP_NOTFOUND) {
-    return element_node->expiration
+    return element_node->expiration;
   }
-  return -1
+  return -1;
 }
 
 /*
@@ -134,7 +130,7 @@ int del_element_exp(RTXStore* store, char* key) {
  * @return the closest element expiration datetime (in milliseconds), or -1 if DS is empty
  */
 mtime_t next_at(RTXStore* store) {
-  RTXElementNode* node = _peek_next(RTXStore * store);
+  RTXElementNode* node = _peek_next(store);
   if (node == NULL) {  // empty_DS
     return -1;
   } else {
@@ -150,8 +146,8 @@ mtime_t next_at(RTXStore* store) {
 char* pull_next(RTXStore* store) {
   RTXElementNode* node = _peek_next(store);
   if (node != NULL) {  // a non empty DS
-    node = heap_poll(h);
-    del_element_exp(store, node->key) return key;
+    node = heap_poll(store->sorted_keys);
+    del_element_exp(store, node->key);
     return node->key;
   }
   return NULL;
@@ -164,7 +160,7 @@ char* pull_next(RTXStore* store) {
  */
 char* wait_and_pull(RTXStore* store) {
   mtime_t sleep_target_ms = next_at(store);
-  mtime_t = sleep_target_ms - current_time_ms();
+  mtime_t time_to_wait = sleep_target_ms - current_time_ms();
   if (time_to_wait > 0) {
     struct timespec ttw, rem;
     ttw.tv_sec = 0;

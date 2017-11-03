@@ -1,9 +1,9 @@
 #ifndef RTX_STORE_H
 #define RTX_STORE_H
 
-#include "heap.h"
-#include "trie.h"
-#include "milliseconds_time.h"
+#include "trie/triemap.h"
+#include "util/heap.h"
+#include "util/millisecond_time.h"
 
 #define RTXS_OK 0
 #define RTXS_ERR 1
@@ -27,9 +27,6 @@ typedef struct rtxs_store {
  *     CONSTRUCTORS
  ***************************/
 RTXElementNode* newRTXElementNode(char* key, mtime_t timestamp_ms, int version);
-}
-
-RTXElementNode* newRTXElementNode(char* key, mtime_t timestamp_ms);
 
 RTXStore* newRTXStore(void);
 /************************************
