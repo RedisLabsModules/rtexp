@@ -23,6 +23,12 @@ RTXElementNode* newRTXElementNode(char* key, mtime_t timestamp_ms, int version) 
   return node;
 }
 
+void RTXStore_Free(RTXStore* store) {
+  TrieMap_Free(store->element_node_map, NULL);
+  heap_free(store->sorted_keys);
+  free(store);
+}
+
 /*
  * Update expiration, increase the version num, keep the name
  */

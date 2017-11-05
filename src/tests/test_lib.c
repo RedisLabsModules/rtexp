@@ -52,6 +52,7 @@
 #define FAIL 1
 
 int test_set_get_element_exp() {
+  int retval = FAIL;
   mtime_t ttl_ms = 10000;
   mtime_t expected = current_time_ms() + ttl_ms;
   char* key = "test_key_1";
@@ -60,9 +61,12 @@ int test_set_get_element_exp() {
   mtime_t saved_ms = get_element_exp(store, key);
   if (saved_ms != expected) {
     printf("ERROR: expected %llu but found %llu\n", ttl_ms, saved_ms);
-    return FAIL;
+    retval = FAIL;
   } else
-    return SUCCESS;
+    retval = SUCCESS;
+
+  RTXStore_Free(store);
+  return retval;
 }
 
 int main(int argc, char* argv[]) {

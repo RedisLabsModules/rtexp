@@ -24,9 +24,11 @@ typedef struct rtxs_store {
 } RTXStore;
 
 /***************************
- *     CONSTRUCTOR
+ *     CONSTRUCTOR/ DESTRUCTOR
  ***************************/
 RTXStore* newRTXStore(void);
+
+void RTXStore_Free(RTXStore* store);
 
 /************************************
  *   General DS handling functions
