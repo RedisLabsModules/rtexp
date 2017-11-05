@@ -18,10 +18,10 @@ package: all
 buildall:
 	$(MAKE) -C ./src $@
 
-deploydocs:
-	mkdocs build
-	s3cmd sync site/ s3://redisearch.io
-.PHONY: deploydocs
+# deploydocs:
+# 	mkdocs build
+# 	s3cmd sync site/ s3://redisearch.io
+# .PHONY: deploydocs
 
 staticlib:
 	$(MAKE) -C ./src $@
@@ -30,10 +30,10 @@ staticlib:
 print_version:
 	$(MAKE) -C ./src print_version
 
-docker: distclean print_version
-	docker build . -t redislabs/redisearch
-
-docker_push: docker
-	docker push redislabs/redisearch:latest
-	docker tag redislabs/redisearch:latest redislabs/redisearch:`./src/print_version`
-	docker push redislabs/redisearch:`./src/print_version`
+# docker: distclean print_version
+# 	docker build . -t redislabs/redisearch
+#
+# docker_push: docker
+# 	docker push redislabs/redisearch:latest
+# 	docker tag redislabs/redisearch:latest redislabs/redisearch:`./src/print_version`
+# 	docker push redislabs/redisearch:`./src/print_version`

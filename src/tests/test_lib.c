@@ -2,20 +2,14 @@
  * It is basically a min heap <key, exp_version> sorted by expiration,
  * with a map of [key] -> <exp_version, exp> on the side
  */
-#include "src/rtexp_store.h"
+#include "../librtexp.h"
 
-#include "src/util/millisecond_time.h"
+#include "../util/millisecond_time.h"
 
 #include <time.h>
+#include <unistd.h>
 
-/***************************
- *     CONSTRUCTORS
- ***************************/
-
-RTXStore* newRTXStore(void);
-/************************************
- *   General DS handling functions
- ************************************/
+// RTXStore* newRTXStore(void);
 
 /*
  * Insert expiration for a new key or update an existing one
@@ -54,16 +48,38 @@ RTXStore* newRTXStore(void);
  */
 // char* wait_and_pull(RTXStore* store);
 
-int test_set_element_exp() {
-  return 0;
+#define SUCCESS 0
+#define FAIL 1
+
+int test_set_get_element_exp() {
+  mtime_t ttl_ms = 10000;
+  mtime_t expected = current_time_ms() + ttl_ms;
+  char* key = "test_key_1";
+  RTXStore* store = newRTXStore();
+  if (set_element_exp(store, key, ttl_ms) == RTXS_ERR) return FAIL;
+  mtime_t saved_ms = get_element_exp(store, key);
+  if (saved_ms != expected) {
+    printf("ERROR: expected %llu but found %llu\n", ttl_ms, saved_ms);
+    return FAIL;
+  } else
+    return SUCCESS;
 }
 
 int main(int argc, char* argv[]) {
-  test_funcs = [
-
-  ];
-  for (i = 1; i <= sizeof(test_funcs); i--) {
-    if (test_funcs[(i - 1)]() != 0) return i;
+  mtime_t start_time = current_time_ms();
+  int num_of_failed_tests = 0;
+  if (test_set_get_element_exp() == FAIL) {
+    ++num_of_failed_tests;
+    printf("Failed on set-get\n");
   }
-  return 0;
+
+  double total_time_ms = current_time_ms() - start_time;
+  if (num_of_failed_tests) {
+    printf("Failed on %d tests\n", num_of_failed_tests);
+    return FAIL;
+  } else {
+
+    printf("OK (done in %.2f sec)\n", total_time_ms / 1000);
+    return SUCCESS;
+  }
 }

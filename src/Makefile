@@ -46,13 +46,14 @@ CC_DEPS = $(patsubst %.c, %.d, $(CC_SOURCES) )
 
 # Library dependencies
 LIBRMUTIL=rmutil/librmutil.a
-LIBTRIE=trie/libtrie.a
-LIBTRIEMAP=dep/triemap/libtriemap.a
-LIBNU=dep/libnu/libnu.a
-LIBSTEMMER=dep/snowball/libstemmer.o
+# LIBTRIE=trie/libtrie.a
+# LIBTRIEMAP=dep/triemap/libtriemap.a
+LIBTRIEMAP=trie/libtriemap.a
+# LIBNU=dep/libnu/libnu.a
+# LIBSTEMMER=dep/snowball/libstemmer.o
 
 # Compilation deps for the module
-LIBS=$(LIBRMUTIL) $(LIBNU) $(LIBSTEMMER) $(LIBTRIE) $(LIBTRIEMAP)
+LIBS=$(LIBRMUTIL) $(LIBTRIEMAP) #$(LIBTRIE) $(LIBNU) $(LIBSTEMMER)
 MODULE=$(CC_OBJECTS) $(LIBS)
 
 %.c: %.y
@@ -62,7 +63,7 @@ MODULE=$(CC_OBJECTS) $(LIBS)
 %.o: %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(TARGET_ARCH) -c $< -o $@ -MMD -MF $(@:.o=.d)
 
-all: redisearch.so
+all: rtexp.so
 
 # Include all dependency files for C files
 -include $(CC_DEPS)
@@ -75,7 +76,7 @@ $(LIBTRIE):
 	$(MAKE) -C trie
 .PHONY: $(LIBTRIE)
 $(LIBTRIEMAP):
-	$(MAKE) -C dep/triemap
+	$(MAKE) -C trie #/triemap.o
 .PHONY: $(LIBTRIEMAP)
 $(LIBSTEMMER):
 	$(MAKE) -C dep/snowball libstemmer.o
@@ -90,32 +91,34 @@ $(LIBNU):
 	# $(MAKE) -C $@
 # .PHONY: query_parser
 
-build_tests: redisearch.so libredisearch.a
+build_tests: librtexp.so rtexp_module.so
+	# $(MAKE)  libtest.c -o test #build
 	$(MAKE) -C tests build
 
 test: $(MODULE) build_tests
 	# low level redis-independant tests
+	# ./tests/test
 	$(MAKE) -C ./tests test
 	# high level python integration tests
-	$(MAKE) -C pytest test
+	# $(MAKE) -C pytest test
 	# Triemap tests
-	$(MAKE) -C dep/triemap/test test
+	# $(MAKE) -C trie/test test
 
-buildall: redisearch.so libredisearch.a build_tests
+buildall: librtexp.so rtexp.so build_tests
 
 # Build the module...
-redisearch.so: $(MODULE) version.h
+rtexp.so: $(MODULE) version.h
 	# Just to make sure old versions of the modules are deleted
 	rm -f module.so
 	$(LD) -o $@ $(MODULE) $(SHOBJ_LDFLAGS) -lc -lm
 
 # Build a stand-alone static library without the module entry point.
 # This is used to include the module's functionality in other modules
-libredisearch.a: CFLAGS+=-DRS_CMD_PREFIX='"_FT"' -DRS_STATIC
-libredisearch.a: $(CC_OBJECTS) $(LIBS) version.h
+librtexp.a: CFLAGS+=-DRS_CMD_PREFIX='"_FT"' -DRS_STATIC
+librtexp.a: $(CC_OBJECTS) $(LIBS) version.h
 	ar rcs $@ $(CC_OBJECTS)
 
-staticlib: libredisearch.a
+staticlib: librtexp.a
 
 clean:
 	rm -fv *.[oad] util/*.[oad] trie/*.[oad] #query_parser/*.[oad] ext/*.[oad]
@@ -124,9 +127,9 @@ clean:
 distclean:
 	find . -type f \( -name '*.[oad]' -o -name '*.so' \) -delete -print
 
-package: redisearch.so
+package: rtexp.so
 	mkdir -p ../build
-	module_packer -v -o "../build/redisearch-oss.{os}-{architecture}.latest.zip" "`pwd`/redisearch.so"
+	module_packer -v -o "../build/rtexp-oss.{os}-{architecture}.latest.zip" "`pwd`/rtexp.so"
 
 print_version: version.h print_version.c
 	@$(CC) -o $@ -DPRINT_VERSION_TARGET $@.c

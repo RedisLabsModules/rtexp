@@ -2,7 +2,7 @@
  * It is basically a min heap <key, exp_version> sorted by expiration,
  * with a map of [key] -> <exp_version, exp> on the side
  */
-#include "rtexp_store.h"
+#include "librtexp.h"
 
 #include "trie/triemap.h"
 #include "util/heap.h"
@@ -15,6 +15,13 @@
 /***************************
  *   Datastructure Utils
  ***************************/
+RTXElementNode* newRTXElementNode(char* key, mtime_t timestamp_ms, int version) {
+  RTXElementNode* node = malloc(sizeof(RTXElementNode));
+  node->key = key;
+  node->expiration = timestamp_ms;
+  node->version = version;
+  return node;
+}
 
 /*
  * Update expiration, increase the version num, keep the name
@@ -61,17 +68,11 @@ RTXElementNode* _peek_next(RTXStore* store) {
   return NULL;
 }
 
-/***************************
- *     CONSTRUCTORS
- ***************************/
-RTXElementNode* newRTXElementNode(char* key, mtime_t timestamp_ms, int version) {
-  RTXElementNode node = {.key = key, .expiration = timestamp_ms, .version = version};
-  return &node;
-}
-
 RTXStore* newRTXStore(void) {
-  RTXStore store = {.sorted_keys = heap_new(_cmp_node, NULL), .element_node_map = NewTrieMap()};
-  return &store;
+  RTXStore* store = malloc(sizeof(RTXStore));
+  store->sorted_keys = heap_new(_cmp_node, NULL);
+  store->element_node_map = NewTrieMap();
+  return store;
 }
 
 /************************************

@@ -1,6 +1,7 @@
 #include "millisecond_time.h"
 
 #include <time.h>
+#include <math.h>
 
 mtime_t current_time_ms(void) {
   long ms;   // Milliseconds
