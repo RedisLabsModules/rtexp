@@ -47,8 +47,8 @@ int _is_valid_node(RTXStore* store, RTXElementNode* node) {
   if (node == NULL) {
     return 0;
   }
-  TrieMap* t = store->element_node_map;
   char* key = node->key;
+  TrieMap* t = store->element_node_map;
   RTXElementNode* stored_node = TrieMap_Find(t, key, strlen(key));
   if (stored_node != NULL && stored_node != TRIEMAP_NOTFOUND)
     return (node->version == stored_node->version);
@@ -148,7 +148,6 @@ mtime_t next_at(RTXStore* store) {
  * Remove the element with the closest expiration datetime from the data store and return it's key
  * @return the key of the element with closest expiration datetime
  */
-// TODO: there might be a deletion issue here (where is the key string stored?)
 char* pull_next(RTXStore* store) {
   RTXElementNode* node = _peek_next(store);
   if (node != NULL) {  // a non empty DS

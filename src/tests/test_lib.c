@@ -9,7 +9,23 @@
 #include <time.h>
 #include <unistd.h>
 
+/*
+ * Wait Remove the element with the closest expiration datetime from the data store and return it's
+ * key
+ * @return the key of the element with closest expiration datetime
+ */
+// char* wait_and_pull(RTXStore* store);
+
+#define SUCCESS 0
+#define FAIL 1
+
 // RTXStore* newRTXStore(void);
+// void RTXStore_Free(RTXStore* store);
+int constructor_distructore_test() {
+  RTXStore* store = newRTXStore();
+  RTXStore_Free(store);
+  return SUCCESS;
+}
 
 /*
  * Insert expiration for a new key or update an existing one
@@ -22,35 +38,6 @@
  * @return datetime of expiration (in milliseconds) on success, -1 on error
  */
 // mtime_t get_element_exp(RTXStore* store, char* key);
-
-/*
- * Remove expiration from the data store for the given key
- * @return RTXS_OK
- */
-// int del_element_exp(RTXStore* store, char* key);
-
-/*
- * @return the closest element expiration datetime (in milliseconds), or -1 if DS is empty
- */
-// mtime_t next_at(RTXStore* store);
-
-/*
- * Remove the element with the closest expiration datetime from the data store and return it's key
- * @return the key of the element with closest expiration datetime
- */
-// TODO: there might be a deletion issue here (where is the key string stored?)
-// char* pull_next(RTXStore* store);
-
-/*
- * Wait Remove the element with the closest expiration datetime from the data store and return it's
- * key
- * @return the key of the element with closest expiration datetime
- */
-// char* wait_and_pull(RTXStore* store);
-
-#define SUCCESS 0
-#define FAIL 1
-
 int test_set_get_element_exp() {
   int retval = FAIL;
   mtime_t ttl_ms = 10000;
@@ -69,6 +56,11 @@ int test_set_get_element_exp() {
   return retval;
 }
 
+/*
+ * Remove expiration from the data store for the given key
+ * @return RTXS_OK
+ */
+// int del_element_exp(RTXStore* store, char* key);
 int test_del_element_exp() {
   int retval = FAIL;
   mtime_t ttl_ms = 10000;
@@ -88,6 +80,10 @@ int test_del_element_exp() {
   return retval;
 }
 
+/*
+ * @return the closest element expiration datetime (in milliseconds), or -1 if DS is empty
+ */
+// mtime_t next_at(RTXStore* store);
 int test_next_at() {
   int retval = FAIL;
   RTXStore* store = newRTXStore();
@@ -107,11 +103,10 @@ int test_next_at() {
   if ((set_element_exp(store, key1, ttl_ms1) != RTXS_ERR) &&
       (set_element_exp(store, key2, ttl_ms2) != RTXS_ERR) &&
       (set_element_exp(store, key3, ttl_ms3) != RTXS_ERR) &&
-      (set_element_exp(store, key4, ttl_ms4) != RTXS_ERR)  // &&
-      //   (del_element_exp(store, key2) != RTXS_ERR)
-  ) {
+      (set_element_exp(store, key4, ttl_ms4) != RTXS_ERR) &&
+      (del_element_exp(store, key2) != RTXS_ERR)) {
 
-    mtime_t expected = current_time_ms() + ttl_ms2;
+    mtime_t expected = current_time_ms() + ttl_ms3;
     mtime_t saved_ms = next_at(store);
     if (saved_ms != expected) {
       printf("ERROR: expected %llu but found %llu\n", expected, saved_ms);
@@ -124,6 +119,11 @@ int test_next_at() {
   return retval;
 }
 
+/*
+ * Remove the element with the closest expiration datetime from the data store and return it's key
+ * @return the key of the element with closest expiration datetime
+ */
+// char* pull_next(RTXStore* store);
 int test_pull_next() {
   int retval = FAIL;
   RTXStore* store = newRTXStore();
@@ -184,19 +184,19 @@ int main(int argc, char* argv[]) {
     ++num_of_passed_tests;
   }
 
-  if (test_next_at() == FAIL) {
-    ++num_of_failed_tests;
-    printf("FAILED on next_at\n");
-  } else {
-    printf("PASSED next_at test\n");
-    ++num_of_passed_tests;
-  }
-
   if (test_pull_next() == FAIL) {
     ++num_of_failed_tests;
     printf("FAILED on pull_next\n");
   } else {
     printf("PASSED pull_next test\n");
+    ++num_of_passed_tests;
+  }
+
+  if (test_next_at() == FAIL) {
+    ++num_of_failed_tests;
+    printf("FAILED on next_at\n");
+  } else {
+    printf("PASSED next_at test\n");
     ++num_of_passed_tests;
   }
 

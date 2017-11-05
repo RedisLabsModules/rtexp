@@ -61,7 +61,6 @@ mtime_t next_at(RTXStore* store);
  * Remove the element with the closest expiration datetime from the data store and return it's key
  * @return the key of the element with closest expiration datetime
  */
-// TODO: there might be a deletion issue here (where is the key string stored?)
 char* pull_next(RTXStore* store);
 
 /*
