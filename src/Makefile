@@ -91,7 +91,7 @@ $(LIBNU):
 	# $(MAKE) -C $@
 # .PHONY: query_parser
 
-build_tests: librtexp.so rtexp_module.so
+build_tests: rtexp.so rtexp_module.so #librtexp.so
 	# $(MAKE)  libtest.c -o test #build
 	$(MAKE) -C tests build
 
@@ -104,12 +104,12 @@ test: $(MODULE) build_tests
 	# Triemap tests
 	# $(MAKE) -C trie/test test
 
-buildall: librtexp.so rtexp.so build_tests
+buildall:  rtexp.so build_tests #librtexp.so
 
 # Build the module...
 rtexp.so: $(MODULE) version.h
 	# Just to make sure old versions of the modules are deleted
-	rm -f module.so
+	rm -f rtexp.so
 	$(LD) -o $@ $(MODULE) $(SHOBJ_LDFLAGS) -lc -lm
 
 # Build a stand-alone static library without the module entry point.
@@ -121,7 +121,7 @@ librtexp.a: $(CC_OBJECTS) $(LIBS) version.h
 staticlib: librtexp.a
 
 clean:
-	rm -fv *.[oad] util/*.[oad] trie/*.[oad] #query_parser/*.[oad] ext/*.[oad]
+	rm -fv *.[oad] util/*.[oad] trie/*.[oad] tests/*.[oad] tests/*.run rmutil/*.[oad]
 	$(MAKE) -C tests clean
 
 distclean:

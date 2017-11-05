@@ -36,13 +36,8 @@ void* _trie_node_updater(RTXElementNode* oldval, RTXElementNode* newval) {
   return newRTXElementNode(oldval->key, newval->expiration, ++(oldval->version));
 }
 
-/*
- * <0 node_a goes before node_b
- * 0  node_a is equivalent to node_b
- * >0 node_a goes after node_b
- */
 int _cmp_node(const RTXElementNode* node_a, const RTXElementNode* node_b, const void* udata) {
-  return node_a->expiration - node_b->expiration;
+  return node_b->expiration - node_a->expiration;
 }
 
 /*
@@ -55,7 +50,10 @@ int _is_valid_node(RTXStore* store, RTXElementNode* node) {
   TrieMap* t = store->element_node_map;
   char* key = node->key;
   RTXElementNode* stored_node = TrieMap_Find(t, key, strlen(key));
-  return (node->version == stored_node->version);
+  if (stored_node != NULL && stored_node != TRIEMAP_NOTFOUND)
+    return (node->version == stored_node->version);
+  else
+    return 0;
 }
 
 /*
@@ -65,6 +63,7 @@ RTXElementNode* _peek_next(RTXStore* store) {
   heap_t* h = store->sorted_keys;
   while (heap_count(h) != 0) {
     RTXElementNode* node = heap_peek(h);
+    // printf("peeked and saw:%s\n", node->key);
     if (_is_valid_node(store, node)) {
       return node;
     } else {
@@ -154,8 +153,9 @@ char* pull_next(RTXStore* store) {
   RTXElementNode* node = _peek_next(store);
   if (node != NULL) {  // a non empty DS
     node = heap_poll(store->sorted_keys);
+    char* key = strdup(node->key);
     del_element_exp(store, node->key);
-    return node->key;
+    return key;
   }
   return NULL;
 }

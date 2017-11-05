@@ -7,12 +7,12 @@ As this project does not include many unknown-unknown elements Tamar Labs propos
 The design will be in accordance with the the specification document below. The following is a summation of said document.
 The API will follow the redis expiration API, denoting Real-Time with R as the prefix.
 This module will include the commands for the following operations:
-1. REXPIRE {key} {milliseconds}
+1. REXPIRE {key} {ttl_ms}
 2. REXPIREAT {key} {timestamp_ms}
 3. RTTL {key}
 4. RUNEXPIRE {key}
-5. RSETEX {key} {value} {ttl}
-6. REXECEX {CMD} {key} {ttl} {....}
+5. RSETEX {key} {value} {ttl_ms}
+6. REXECEX {CMD} {key} {ttl_ms} {....} <- run CMD, save result to KEY and set expiration to ttl
 The RUNEXPIRE command will serve to declare re-expiring or un-expiring a key explicitly.
 
 The new commands will provide expiration notifications using normal keyspace.
