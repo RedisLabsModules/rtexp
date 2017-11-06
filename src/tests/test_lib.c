@@ -9,13 +9,6 @@
 #include <time.h>
 #include <unistd.h>
 
-/*
- * Wait Remove the element with the closest expiration datetime from the data store and return it's
- * key
- * @return the key of the element with closest expiration datetime
- */
-// char* wait_and_pull(RTXStore* store);
-
 #define SUCCESS 0
 #define FAIL 1
 
@@ -163,6 +156,54 @@ int test_pull_next() {
   return retval;
 }
 
+/*
+ * Wait Remove the element with the closest expiration datetime from the data store and return it's
+ * key
+ * @return the key of the element with closest expiration datetime
+ */
+// char* wait_and_pull(RTXStore* store);
+int test_wait_and_pull() {
+  int retval = FAIL;
+  RTXStore* store = newRTXStore();
+
+  mtime_t ttl_ms1 = 10000;
+  char* key1 = "pull_next_test_key_1";
+
+  mtime_t ttl_ms2 = 2000;
+  char* key2 = "pull_next_test_key_2";
+
+  mtime_t ttl_ms3 = 3000;
+  char* key3 = "pull_next_test_key_3";
+
+  if ((set_element_exp(store, key1, ttl_ms1) != RTXS_ERR) &&
+      (set_element_exp(store, key2, ttl_ms2) != RTXS_ERR) &&
+      (del_element_exp(store, key2) != RTXS_ERR) &&
+      (set_element_exp(store, key3, ttl_ms3) != RTXS_ERR)) {
+
+    mtime_t expected_ms = ttl_ms3;
+    char* expected_key = key3;
+    mtime_t start_time = current_time_ms();
+    char* pulled_key = wait_and_pull(store);
+    mtime_t actual_ms = current_time_ms() - start_time;
+    if (expected_ms == actual_ms) {
+      printf("ERROR: expected %llu but found %llu\n", expected_ms, actual_ms);
+      retval = FAIL;
+    } else {
+      // make sure we actually delete the thing
+      mtime_t expected_ms = -1;
+      mtime_t saved_ms = get_element_exp(store, expected_key);
+      if (expected_ms != saved_ms) {
+        printf("ERROR: expected %llu but found %llu\n", expected_ms, saved_ms);
+        retval = FAIL;
+      } else
+        retval = SUCCESS;
+    }
+  }
+
+  RTXStore_Free(store);
+  return retval;
+}
+
 int main(int argc, char* argv[]) {
   mtime_t start_time = current_time_ms();
   int num_of_failed_tests = 0;
@@ -197,6 +238,14 @@ int main(int argc, char* argv[]) {
     printf("FAILED on next_at\n");
   } else {
     printf("PASSED next_at test\n");
+    ++num_of_passed_tests;
+  }
+
+  if (test_pull_next() == FAIL) {
+    ++num_of_failed_tests;
+    printf("FAILED on pull_next\n");
+  } else {
+    printf("PASSED pull_next\n");
     ++num_of_passed_tests;
   }
 

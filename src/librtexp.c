@@ -44,7 +44,7 @@ int _cmp_node(const RTXElementNode* node_a, const RTXElementNode* node_b, const 
  * @return True if node has a valid version
  */
 int _is_valid_node(RTXStore* store, RTXElementNode* node) {
-  if (node == NULL) {
+  if (node == NULL || node == TRIEMAP_NOTFOUND || node->key == NULL) {
     return 0;
   }
   char* key = node->key;

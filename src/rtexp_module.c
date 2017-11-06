@@ -20,9 +20,9 @@ char *string_append(char *a, const char *b) {
 /********************
  *    Redis Type
  ********************/
+static RedisModuleType *RTXStoreType;
 
-RTXStore *validateStoreKey(RedisModuleCtx *ctx, RedisModuleKey *key,
-                           RedisModuleString *store_name) {
+RTXStore *validateStoreKey(RedisModuleCtx *ctx, RedisModuleKey *key) {
   int type = RedisModule_KeyType(key);
   if (type != REDISMODULE_KEYTYPE_EMPTY && RedisModule_ModuleTypeGetType(key) != RTXStoreType) {
     RedisModule_ReplyWithError(ctx, REDISMODULE_ERRORMSG_WRONGTYPE);
@@ -30,18 +30,11 @@ RTXStore *validateStoreKey(RedisModuleCtx *ctx, RedisModuleKey *key,
     return NULL;
   }
   if (type == REDISMODULE_KEYTYPE_EMPTY) {
-    if (store_name != NULL) {
-      RedisModuleString *saved_store_name = RedisModule_CreateStringFromString(ctx, store_name);
-      RTXStore *rtxStore = _createRTXStore(saved_store_name);
-      RedisModule_ModuleTypeSetValue(key, RTXStoreType, rtxStore);
-      return RTXStore;
-    } else {
-      RedisModule_CloseKey(key);
-      return NULL;
-    }
-  } else {
+    RTXStore *rtxStore = newRTXStore();
+    RedisModule_ModuleTypeSetValue(key, RTXStoreType, rtxStore);
+    return rtxStore;
+  } else
     return RedisModule_ModuleTypeGetValue(key);
-  }
 }
 
 /********************
@@ -96,7 +89,7 @@ int TTLCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   // get key store_name
   RedisModuleKey *store_key =
       RedisModule_OpenKey(ctx, rtxstore_name, REDISMODULE_READ | REDISMODULE_WRITE);
-  RTXStore *store = validateStoreKey(ctx, store_key, NULL);
+  RTXStore *store = validateStoreKey(ctx, store_key);
 
   size_t object_key_len;
   const char *object_key = RedisModule_StringPtrLen(object_key_str, &object_key_len);
@@ -118,7 +111,7 @@ int UnexpireCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   // get key store_name
   RedisModuleKey *store_key =
       RedisModule_OpenKey(ctx, rtxstore_name, REDISMODULE_READ | REDISMODULE_WRITE);
-  RTXStore *store = validateStoreKey(ctx, store_key, NULL);
+  RTXStore *store = validateStoreKey(ctx, store_key);
 
   size_t object_key_len;
   const char *object_key = RedisModule_StringPtrLen(object_key_str, &object_key_len);
