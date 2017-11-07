@@ -8,6 +8,8 @@
     - [X] RSETEX
     - [ ] REXECEX
 - [ ] add rtexp as redis type
+- [ ] add some decent seatbelts:
+    - [ ] redisSetWithExpiration
 - [ ] write module tests
 - [ ] write documentation for lib
 - [ ] write documentation for redis module
