@@ -41,12 +41,13 @@ RTXStore *validateStoreKey(RedisModuleCtx *ctx, RedisModuleKey *key) {
  *    DS Binding
  ********************/
 
-int insert_with_expiration(RTXStore *store, char *element_key, char *element, mstime_t ttl_ms) {
+int insert_and_set_ttl(RTXStore *store, char *element_key, RedisModuleString *element,
+                       mstime_t ttl_ms) {
   // TODO: set redis element here
   return set_element_exp(store, element_key, ttl_ms);
 }
 
-int update_ttl(RTXStore *store, char *element_key, mstime_t ttl_ms) {
+int set_ttl(RTXStore *store, char *element_key, mstime_t ttl_ms) {
   return set_element_exp(store, element_key, ttl_ms);
 }
 
@@ -104,10 +105,13 @@ int ExpireCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     return REDISMODULE_ERR;
   }
 
-  mstime_t stored_ttl = update_ttl(store, element_key, ttl_ms);
-
-  RedisModule_ReplyWithSimpleString(ctx, "OK");
-  return REDISMODULE_OK;
+  if (set_ttl(store, element_key, ttl_ms) == REDISMODULE_OK) {
+    RedisModule_ReplyWithSimpleString(ctx, "OK");
+    return REDISMODULE_OK;
+  } else {
+    RedisModule_ReplyWithError(ctx, "Unexpeted Error Occured");
+    return REDISMODULE_ERR;
+  }
 }
 
 // 2. REXPIREAT {key} {timestamp_ms}
@@ -126,10 +130,13 @@ int ExpireAtCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   }
   mstime_t ttl_ms = timestamp_ms - current_time_ms();
 
-  mstime_t stored_ttl = update_ttl(store, element_key, ttl_ms);
-
-  RedisModule_ReplyWithSimpleString(ctx, "OK");
-  return REDISMODULE_OK;
+  if (set_ttl(store, element_key, ttl_ms) == REDISMODULE_OK) {
+    RedisModule_ReplyWithSimpleString(ctx, "OK");
+    return REDISMODULE_OK;
+  } else {
+    RedisModule_ReplyWithError(ctx, "Unexpeted Error Occured");
+    return REDISMODULE_ERR;
+  }
 }
 
 // 3. RTTL {key}
@@ -161,8 +168,27 @@ int UnexpireCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
 
 // 5. RSETEX {key} {value} {ttl}
 int SetexCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
-  RedisModule_ReplyWithSimpleString(ctx, "");
-  return REDISMODULE_OK;
+  char *element_key;
+  RTXStore *store;
+  if ((argc != 3) || (getStoreAndKey(ctx, argv, argc, &store, &element_key) != REDISMODULE_OK))
+    RedisModule_WrongArity(ctx);
+
+  RedisModuleString *element = argv[3];
+  RedisModuleString *ttl_ms_str = argv[4];
+  mstime_t ttl_ms;
+
+  if (RedisModule_StringToLongLong(ttl_ms_str, &ttl_ms) == REDISMODULE_ERR) {
+    RedisModule_ReplyWithError(ctx, "Time stamp must be parsable to type Long Long");
+    return REDISMODULE_ERR;
+  }
+
+  if (insert_and_set_ttl(store, element_key, element, ttl_ms) == REDISMODULE_OK) {
+    RedisModule_ReplyWithSimpleString(ctx, "OK");
+    return REDISMODULE_OK;
+  } else {
+    RedisModule_ReplyWithError(ctx, "Unexpeted Error Occured");
+    return REDISMODULE_ERR;
+  }
 }
 
 // 6. REXECEX {key} {ttl} {....} - execute command, save result to key, and set expiration
@@ -171,6 +197,7 @@ int ExecuteAndExpireCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int a
   return REDISMODULE_OK;
 }
 
+// Init Module
 int RedisModule_OnLoad(RedisModuleCtx *ctx) {
   // Register the module itself
   if (RedisModule_Init(ctx, "REALEX", 1, REDISMODULE_APIVER_1) == REDISMODULE_ERR) {

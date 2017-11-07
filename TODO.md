@@ -1,6 +1,14 @@
 # TBD
-* write documentation for lib
-* add rtexp as redis type
-* bind lib to redis module commands
-* write documentation for redis module
-* clean Makefiles
+- [X] write lib tests
+- [ ] bind lib to redis module commands
+    - [X] REXPIRE
+    - [X] REXPIREAT
+    - [X] RTTL
+    - [X] RUNEXPIRE
+    - [X] RSETEX
+    - [ ] REXECEX
+- [ ] add rtexp as redis type
+- [ ] write module tests
+- [ ] write documentation for lib
+- [ ] write documentation for redis module
+- [ ] clean Makefiles
