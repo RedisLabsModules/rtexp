@@ -241,11 +241,11 @@ int main(int argc, char* argv[]) {
     ++num_of_passed_tests;
   }
 
-  if (test_pull_next() == FAIL) {
+  if (test_wait_and_pull() == FAIL) {
     ++num_of_failed_tests;
-    printf("FAILED on pull_next\n");
+    printf("FAILED on wait_and_pull\n");
   } else {
-    printf("PASSED pull_next\n");
+    printf("PASSED wait_and_pull\n");
     ++num_of_passed_tests;
   }
 
