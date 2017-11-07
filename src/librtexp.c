@@ -15,7 +15,7 @@
 /***************************
  *   Datastructure Utils
  ***************************/
-RTXElementNode* newRTXElementNode(char* key, mtime_t timestamp_ms, int version) {
+RTXElementNode* newRTXElementNode(char* key, mstime_t timestamp_ms, int version) {
   RTXElementNode* node = malloc(sizeof(RTXElementNode));
   node->key = key;
   node->expiration = timestamp_ms;
@@ -88,9 +88,9 @@ RTXStore* newRTXStore(void) {
  * Insert expiration for a new key or update an existing one
  * @return RTXS_OK on success, RTXS_ERR on error
  */
-int set_element_exp(RTXStore* store, char* key, mtime_t ttl_ms) {
+int set_element_exp(RTXStore* store, char* key, mstime_t ttl_ms) {
   TrieMap* t = store->element_node_map;
-  mtime_t timestamp_ms = current_time_ms() + ttl_ms;
+  mstime_t timestamp_ms = current_time_ms() + ttl_ms;
   RTXElementNode* new_node = newRTXElementNode(key, timestamp_ms, 0);
   int trie_result = TrieMap_Add(t, key, strlen(key), new_node, _trie_node_updater);
 
@@ -113,7 +113,7 @@ int set_element_exp(RTXStore* store, char* key, mtime_t ttl_ms) {
  * Get the expiration value for the given key
  * @return datetime of expiration (in milliseconds) on success, -1 on error
  */
-mtime_t get_element_exp(RTXStore* store, char* key) {
+mstime_t get_element_exp(RTXStore* store, char* key) {
   TrieMap* t = store->element_node_map;
   RTXElementNode* element_node = TrieMap_Find(t, key, strlen(key));
   if (element_node != NULL && element_node != TRIEMAP_NOTFOUND) {
@@ -135,7 +135,7 @@ int del_element_exp(RTXStore* store, char* key) {
 /*
  * @return the closest element expiration datetime (in milliseconds), or -1 if DS is empty
  */
-mtime_t next_at(RTXStore* store) {
+mstime_t next_at(RTXStore* store) {
   RTXElementNode* node = _peek_next(store);
   if (node == NULL) {  // empty_DS
     return -1;
@@ -165,8 +165,8 @@ char* pull_next(RTXStore* store) {
  * @return the key of the element with closest expiration datetime
  */
 char* wait_and_pull(RTXStore* store) {
-  mtime_t sleep_target_ms = next_at(store);
-  mtime_t time_to_wait = sleep_target_ms - current_time_ms();
+  mstime_t sleep_target_ms = next_at(store);
+  mstime_t time_to_wait = sleep_target_ms - current_time_ms();
   if (time_to_wait > 0) {
     struct timespec ttw, rem;
     ttw.tv_sec = 0;

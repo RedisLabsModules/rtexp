@@ -3,7 +3,7 @@
 #include <time.h>
 #include <math.h>
 
-mtime_t current_time_ms(void) {
+mstime_t current_time_ms(void) {
   long ms;   // Milliseconds
   time_t s;  // Seconds
   struct timespec spec;

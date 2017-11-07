@@ -14,7 +14,7 @@
 
 typedef struct rtxs_node {
   char* key;
-  mtime_t expiration;
+  mstime_t expiration;
   int version;
 } RTXElementNode;
 
@@ -38,13 +38,13 @@ void RTXStore_Free(RTXStore* store);
  * Insert expiration for a new key or update an existing one
  * @return RTXS_OK on success, RTXS_ERR on error
  */
-int set_element_exp(RTXStore* store, char* key, mtime_t ttl_ms);
+int set_element_exp(RTXStore* store, char* key, mstime_t ttl_ms);
 
 /*
  * Get the expiration value for the given key
  * @return datetime of expiration (in milliseconds) on success, -1 on error
  */
-mtime_t get_element_exp(RTXStore* store, char* key);
+mstime_t get_element_exp(RTXStore* store, char* key);
 
 /*
  * Remove expiration from the data store for the given key
@@ -55,7 +55,7 @@ int del_element_exp(RTXStore* store, char* key);
 /*
  * @return the closest element expiration datetime (in milliseconds), or -1 if DS is empty
  */
-mtime_t next_at(RTXStore* store);
+mstime_t next_at(RTXStore* store);
 
 /*
  * Remove the element with the closest expiration datetime from the data store and return it's key

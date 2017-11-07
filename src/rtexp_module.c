@@ -41,59 +41,105 @@ RTXStore *validateStoreKey(RedisModuleCtx *ctx, RedisModuleKey *key) {
  *    DS Binding
  ********************/
 
-int insert_with_expiration(RTXStore *store, char *object_key, char *element, mtime_t ttl_ms) {
+int insert_with_expiration(RTXStore *store, char *element_key, char *element, mstime_t ttl_ms) {
   // TODO: set redis element here
-  return set_element_exp(store, object_key, ttl_ms);
+  return set_element_exp(store, element_key, ttl_ms);
 }
 
-int update_ttl(RTXStore *store, char *object_key, mtime_t ttl_ms) {
-  return set_element_exp(store, object_key, ttl_ms);
+int update_ttl(RTXStore *store, char *element_key, mstime_t ttl_ms) {
+  return set_element_exp(store, element_key, ttl_ms);
 }
 
-int remove_expiration(RTXStore *store, const char *object_key) {
-  return del_element_exp(store, object_key);
+int remove_expiration(RTXStore *store, char *element_key) {
+  return del_element_exp(store, element_key);
 }
 
-mtime_t get_ttl(RTXStore *store, char *object_key) {
-  mtime_t timestamp_ms = get_element_exp(store, object_key);
+mstime_t get_ttl(RTXStore *store, char *element_key) {
+  mstime_t timestamp_ms = get_element_exp(store, element_key);
   if (timestamp_ms != -1) {
-    mtime_t now = current_time_ms();
+    mstime_t now = current_time_ms();
     return timestamp_ms - now;
   }
   return -1;
 }
 
 /************************
+ *    Module Utils
+ ************************/
+
+// extract store and element key from the input params of the redis module command
+int getStoreAndKey(RedisModuleCtx *ctx, RedisModuleString **argv, int argc, void *store,
+                   const void *element_key) {
+  if (argc < 2) return REDISMODULE_ERR;
+
+  RedisModuleString *rtxstore_name = argv[1];
+  RedisModuleString *element_key_str = argv[2];
+
+  // get key store_name
+  RedisModuleKey *store_key =
+      RedisModule_OpenKey(ctx, rtxstore_name, REDISMODULE_READ | REDISMODULE_WRITE);
+  store = validateStoreKey(ctx, store_key);
+
+  size_t element_key_len;
+  element_key = RedisModule_StringPtrLen(element_key_str, &element_key_len);
+  return REDISMODULE_OK;
+}
+
+/************************
  *    Module Commands
  ************************/
 
-// 1. REXPIRE {key} {milliseconds}
+// 1. REXPIRE {key} {ttl_ms}
 int ExpireCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
-  RedisModule_ReplyWithSimpleString(ctx, "");
+  char *element_key;
+  RTXStore *store;
+  if ((argc != 3) || (getStoreAndKey(ctx, argv, argc, &store, &element_key) != REDISMODULE_OK))
+    RedisModule_WrongArity(ctx);
+
+  RedisModuleString *ttl_ms_str = argv[3];
+  mstime_t ttl_ms;
+
+  if (RedisModule_StringToLongLong(ttl_ms_str, &ttl_ms) == REDISMODULE_ERR) {
+    RedisModule_ReplyWithError(ctx, "Time stamp must be parsable to type Long Long");
+    return REDISMODULE_ERR;
+  }
+
+  mstime_t stored_ttl = update_ttl(store, element_key, ttl_ms);
+
+  RedisModule_ReplyWithSimpleString(ctx, "OK");
   return REDISMODULE_OK;
 }
 
 // 2. REXPIREAT {key} {timestamp_ms}
 int ExpireAtCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
-  RedisModule_ReplyWithSimpleString(ctx, "");
+  char *element_key;
+  RTXStore *store;
+  if ((argc != 3) || (getStoreAndKey(ctx, argv, argc, &store, &element_key) != REDISMODULE_OK))
+    RedisModule_WrongArity(ctx);
+
+  RedisModuleString *timestamp_ms_str = argv[3];
+  mstime_t timestamp_ms;
+
+  if (RedisModule_StringToLongLong(timestamp_ms_str, &timestamp_ms) == REDISMODULE_ERR) {
+    RedisModule_ReplyWithError(ctx, "Time stamp must be parsable to type Long Long");
+    return REDISMODULE_ERR;
+  }
+  mstime_t ttl_ms = timestamp_ms - current_time_ms();
+
+  mstime_t stored_ttl = update_ttl(store, element_key, ttl_ms);
+
+  RedisModule_ReplyWithSimpleString(ctx, "OK");
   return REDISMODULE_OK;
 }
 
 // 3. RTTL {key}
 int TTLCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
-  if (argc != 2) return RedisModule_WrongArity(ctx);
+  char *element_key;
+  RTXStore *store;
+  if (getStoreAndKey(ctx, argv, argc, &store, &element_key) != REDISMODULE_OK)
+    RedisModule_WrongArity(ctx);
 
-  RedisModuleString *rtxstore_name = argv[1];
-  RedisModuleString *object_key_str = argv[2];
-
-  // get key store_name
-  RedisModuleKey *store_key =
-      RedisModule_OpenKey(ctx, rtxstore_name, REDISMODULE_READ | REDISMODULE_WRITE);
-  RTXStore *store = validateStoreKey(ctx, store_key);
-
-  size_t object_key_len;
-  const char *object_key = RedisModule_StringPtrLen(object_key_str, &object_key_len);
-  mtime_t stored_ttl = get_ttl(store, object_key);
+  mstime_t stored_ttl = get_ttl(store, element_key);
   RedisModule_ReplyWithLongLong(ctx, stored_ttl);
   if (stored_ttl == -1)
     return REDISMODULE_ERR;
@@ -103,19 +149,12 @@ int TTLCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
 
 // 4. RUNEXPIRE {key}
 int UnexpireCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
-  if (argc != 2) return RedisModule_WrongArity(ctx);
+  char *element_key;
+  RTXStore *store;
+  if (getStoreAndKey(ctx, argv, argc, &store, &element_key) != REDISMODULE_OK)
+    RedisModule_WrongArity(ctx);
 
-  RedisModuleString *rtxstore_name = argv[1];
-  RedisModuleString *object_key_str = argv[2];
-
-  // get key store_name
-  RedisModuleKey *store_key =
-      RedisModule_OpenKey(ctx, rtxstore_name, REDISMODULE_READ | REDISMODULE_WRITE);
-  RTXStore *store = validateStoreKey(ctx, store_key);
-
-  size_t object_key_len;
-  const char *object_key = RedisModule_StringPtrLen(object_key_str, &object_key_len);
-  remove_expiration(store, object_key);
+  remove_expiration(store, element_key);
   RedisModule_ReplyWithSimpleString(ctx, "OK");
   return REDISMODULE_OK;
 }

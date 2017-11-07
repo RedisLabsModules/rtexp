@@ -24,21 +24,21 @@ int constructor_distructore_test() {
  * Insert expiration for a new key or update an existing one
  * @return RTXS_OK on success, RTXS_ERR on error
  */
-// int set_element_exp(RTXStore* store, char* key, mtime_t ttl_ms);
+// int set_element_exp(RTXStore* store, char* key, mstime_t ttl_ms);
 
 /*
  * Get the expiration value for the given key
  * @return datetime of expiration (in milliseconds) on success, -1 on error
  */
-// mtime_t get_element_exp(RTXStore* store, char* key);
+// mstime_t get_element_exp(RTXStore* store, char* key);
 int test_set_get_element_exp() {
   int retval = FAIL;
-  mtime_t ttl_ms = 10000;
-  mtime_t expected = current_time_ms() + ttl_ms;
+  mstime_t ttl_ms = 10000;
+  mstime_t expected = current_time_ms() + ttl_ms;
   char* key = "set_get_test_key";
   RTXStore* store = newRTXStore();
   if (set_element_exp(store, key, ttl_ms) == RTXS_ERR) return FAIL;
-  mtime_t saved_ms = get_element_exp(store, key);
+  mstime_t saved_ms = get_element_exp(store, key);
   if (saved_ms != expected) {
     printf("ERROR: expected %llu but found %llu\n", expected, saved_ms);
     retval = FAIL;
@@ -56,13 +56,13 @@ int test_set_get_element_exp() {
 // int del_element_exp(RTXStore* store, char* key);
 int test_del_element_exp() {
   int retval = FAIL;
-  mtime_t ttl_ms = 10000;
-  mtime_t expected = -1;
+  mstime_t ttl_ms = 10000;
+  mstime_t expected = -1;
   char* key = "del_test_key";
   RTXStore* store = newRTXStore();
   if (set_element_exp(store, key, ttl_ms) == RTXS_ERR) return FAIL;
   if (del_element_exp(store, key) == RTXS_ERR) return FAIL;
-  mtime_t saved_ms = get_element_exp(store, key);
+  mstime_t saved_ms = get_element_exp(store, key);
   if (saved_ms != expected) {
     printf("ERROR: expected %llu but found %llu\n", expected, saved_ms);
     retval = FAIL;
@@ -76,21 +76,21 @@ int test_del_element_exp() {
 /*
  * @return the closest element expiration datetime (in milliseconds), or -1 if DS is empty
  */
-// mtime_t next_at(RTXStore* store);
+// mstime_t next_at(RTXStore* store);
 int test_next_at() {
   int retval = FAIL;
   RTXStore* store = newRTXStore();
 
-  mtime_t ttl_ms1 = 10000;
+  mstime_t ttl_ms1 = 10000;
   char* key1 = "next_at_test_key_1";
 
-  mtime_t ttl_ms2 = 2000;
+  mstime_t ttl_ms2 = 2000;
   char* key2 = "next_at_test_key_2";
 
-  mtime_t ttl_ms3 = 3000;
+  mstime_t ttl_ms3 = 3000;
   char* key3 = "next_at_test_key_3";
 
-  mtime_t ttl_ms4 = 400000;
+  mstime_t ttl_ms4 = 400000;
   char* key4 = "next_at_test_key_4";
 
   if ((set_element_exp(store, key1, ttl_ms1) != RTXS_ERR) &&
@@ -99,8 +99,8 @@ int test_next_at() {
       (set_element_exp(store, key4, ttl_ms4) != RTXS_ERR) &&
       (del_element_exp(store, key2) != RTXS_ERR)) {
 
-    mtime_t expected = current_time_ms() + ttl_ms3;
-    mtime_t saved_ms = next_at(store);
+    mstime_t expected = current_time_ms() + ttl_ms3;
+    mstime_t saved_ms = next_at(store);
     if (saved_ms != expected) {
       printf("ERROR: expected %llu but found %llu\n", expected, saved_ms);
       retval = FAIL;
@@ -121,13 +121,13 @@ int test_pull_next() {
   int retval = FAIL;
   RTXStore* store = newRTXStore();
 
-  mtime_t ttl_ms1 = 10000;
+  mstime_t ttl_ms1 = 10000;
   char* key1 = "pull_next_test_key_1";
 
-  mtime_t ttl_ms2 = 2000;
+  mstime_t ttl_ms2 = 2000;
   char* key2 = "pull_next_test_key_2";
 
-  mtime_t ttl_ms3 = 3000;
+  mstime_t ttl_ms3 = 3000;
   char* key3 = "pull_next_test_key_3";
 
   if ((set_element_exp(store, key1, ttl_ms1) != RTXS_ERR) &&
@@ -142,8 +142,8 @@ int test_pull_next() {
       retval = FAIL;
     } else {
       // make sure we actually delete the thing
-      mtime_t expected_ms = -1;
-      mtime_t saved_ms = get_element_exp(store, expected);
+      mstime_t expected_ms = -1;
+      mstime_t saved_ms = get_element_exp(store, expected);
       if (expected_ms != saved_ms) {
         printf("ERROR: expected %llu but found %llu\n", expected_ms, saved_ms);
         retval = FAIL;
@@ -166,13 +166,13 @@ int test_wait_and_pull() {
   int retval = FAIL;
   RTXStore* store = newRTXStore();
 
-  mtime_t ttl_ms1 = 10000;
+  mstime_t ttl_ms1 = 10000;
   char* key1 = "pull_next_test_key_1";
 
-  mtime_t ttl_ms2 = 2000;
+  mstime_t ttl_ms2 = 2000;
   char* key2 = "pull_next_test_key_2";
 
-  mtime_t ttl_ms3 = 3000;
+  mstime_t ttl_ms3 = 3000;
   char* key3 = "pull_next_test_key_3";
 
   if ((set_element_exp(store, key1, ttl_ms1) != RTXS_ERR) &&
@@ -180,18 +180,18 @@ int test_wait_and_pull() {
       (del_element_exp(store, key2) != RTXS_ERR) &&
       (set_element_exp(store, key3, ttl_ms3) != RTXS_ERR)) {
 
-    mtime_t expected_ms = ttl_ms3;
+    mstime_t expected_ms = ttl_ms3;
     char* expected_key = key3;
-    mtime_t start_time = current_time_ms();
+    mstime_t start_time = current_time_ms();
     char* pulled_key = wait_and_pull(store);
-    mtime_t actual_ms = current_time_ms() - start_time;
+    mstime_t actual_ms = current_time_ms() - start_time;
     if (expected_ms == actual_ms) {
       printf("ERROR: expected %llu but found %llu\n", expected_ms, actual_ms);
       retval = FAIL;
     } else {
       // make sure we actually delete the thing
-      mtime_t expected_ms = -1;
-      mtime_t saved_ms = get_element_exp(store, expected_key);
+      mstime_t expected_ms = -1;
+      mstime_t saved_ms = get_element_exp(store, expected_key);
       if (expected_ms != saved_ms) {
         printf("ERROR: expected %llu but found %llu\n", expected_ms, saved_ms);
         retval = FAIL;
@@ -205,7 +205,7 @@ int test_wait_and_pull() {
 }
 
 int main(int argc, char* argv[]) {
-  mtime_t start_time = current_time_ms();
+  mstime_t start_time = current_time_ms();
   int num_of_failed_tests = 0;
   int num_of_passed_tests = 0;
 
