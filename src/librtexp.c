@@ -100,13 +100,14 @@ int set_element_exp(RTXStore* store, char* key, mstime_t ttl_ms) {
   TrieMap* t = store->element_node_map;
   mstime_t timestamp_ms = current_time_ms() + ttl_ms;
   RTXExpiration* exp = malloc(sizeof(*exp)); 
+  //printf("settting timestamp to be %llu\n", timestamp_ms);
   exp->time = timestamp_ms;
   exp->version = 0; 
   
   int trie_result = TrieMap_Add(t, key, strlen(key), exp, _trie_node_updater);
   
-  // EXP's version was updated by the updater callback
-  RTXElementNode *node = newRTXElementNode(key, ttl_ms, exp->version);
+  // EXP's version was updated by the trie updater callback
+  RTXElementNode *node = newRTXElementNode(key, exp->time, exp->version);
 
   heap_t* h = store->sorted_keys;
   int heap_result = heap_offer(&h, node);
@@ -124,9 +125,9 @@ int set_element_exp(RTXStore* store, char* key, mstime_t ttl_ms) {
  */
 mstime_t get_element_exp(RTXStore* store, char* key) {
   TrieMap* t = store->element_node_map;
-  RTXElementNode* element_node = TrieMap_Find(t, key, strlen(key));
-  if (element_node != NULL && element_node != TRIEMAP_NOTFOUND) {
-    return element_node->exp.time;
+  RTXExpiration* exp = TrieMap_Find(t, key, strlen(key));
+  if (exp != NULL && exp != TRIEMAP_NOTFOUND) {
+    return exp->time;
   }
   return -1;
 }
@@ -157,7 +158,7 @@ mstime_t next_at(RTXStore* store) {
  * Remove the element with the closest expiration datetime from the data store and return it's key
  * @return the key of the element with closest expiration datetime
  */
-char* pop_wait(RTXStore* store) {
+char* pop_next(RTXStore* store) {
   RTXElementNode* node = _peek_next(store);
   if (node != NULL) {  // a non empty DS
     node = heap_poll(store->sorted_keys);
@@ -173,7 +174,7 @@ char* pop_wait(RTXStore* store) {
  * key
  * @return the key of the element with closest expiration datetime
  */
-char* wait_and_pull(RTXStore* store) {
+char* pop_wait(RTXStore* store) {
   mstime_t sleep_target_ms = next_at(store);
   mstime_t time_to_wait = sleep_target_ms - current_time_ms();
   if (time_to_wait > 0) {
@@ -182,5 +183,5 @@ char* wait_and_pull(RTXStore* store) {
     ttw.tv_nsec = time_to_wait * 1000 - RTX_LATANCY_NS;
     nanosleep(&ttw, &rem);  // TODO: for now we'll assume this is allways fully successfull
   }
-  return pull_next(store);
+  return pop_next(store);
 }

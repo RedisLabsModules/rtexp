@@ -116,19 +116,19 @@ int test_next_at() {
  * Remove the element with the closest expiration datetime from the data store and return it's key
  * @return the key of the element with closest expiration datetime
  */
-// char* pull_next(RTXStore* store);
-int test_pull_next() {
+// char* pop_next(RTXStore* store);
+int test_pop_next() {
   int retval = FAIL;
   RTXStore* store = newRTXStore();
 
   mstime_t ttl_ms1 = 10000;
-  char* key1 = "pull_next_test_key_1";
+  char* key1 = "pop_next_test_key_1";
 
   mstime_t ttl_ms2 = 2000;
-  char* key2 = "pull_next_test_key_2";
+  char* key2 = "pop_next_test_key_2";
 
   mstime_t ttl_ms3 = 3000;
-  char* key3 = "pull_next_test_key_3";
+  char* key3 = "pop_next_test_key_3";
 
   if ((set_element_exp(store, key1, ttl_ms1) != RTXS_ERR) &&
       (set_element_exp(store, key2, ttl_ms2) != RTXS_ERR) &&
@@ -136,7 +136,7 @@ int test_pull_next() {
       (set_element_exp(store, key3, ttl_ms3) != RTXS_ERR)) {
 
     char* expected = key3;
-    char* actual = pull_next(store);
+    char* actual = pop_next(store);
     if (strcmp(expected, actual)) {
       printf("ERROR: expected \'%s\' but found \'%s\'\n", expected, actual);
       retval = FAIL;
@@ -161,19 +161,19 @@ int test_pull_next() {
  * key
  * @return the key of the element with closest expiration datetime
  */
-// char* wait_and_pull(RTXStore* store);
-int test_wait_and_pull() {
+// char* pop_wait(RTXStore* store);
+int test_pop_wait() {
   int retval = FAIL;
   RTXStore* store = newRTXStore();
 
   mstime_t ttl_ms1 = 10000;
-  char* key1 = "pull_next_test_key_1";
+  char* key1 = "pop_next_test_key_1";
 
   mstime_t ttl_ms2 = 2000;
-  char* key2 = "pull_next_test_key_2";
+  char* key2 = "pop_next_test_key_2";
 
   mstime_t ttl_ms3 = 3000;
-  char* key3 = "pull_next_test_key_3";
+  char* key3 = "pop_next_test_key_3";
 
   if ((set_element_exp(store, key1, ttl_ms1) != RTXS_ERR) &&
       (set_element_exp(store, key2, ttl_ms2) != RTXS_ERR) &&
@@ -183,7 +183,7 @@ int test_wait_and_pull() {
     mstime_t expected_ms = ttl_ms3;
     char* expected_key = key3;
     mstime_t start_time = current_time_ms();
-    char* pulled_key = wait_and_pull(store);
+    char* pulled_key = pop_wait(store);
     mstime_t actual_ms = current_time_ms() - start_time;
     if (expected_ms == actual_ms) {
       printf("ERROR: expected %llu but found %llu\n", expected_ms, actual_ms);
@@ -209,6 +209,14 @@ int main(int argc, char* argv[]) {
   int num_of_failed_tests = 0;
   int num_of_passed_tests = 0;
 
+  if (constructor_distructore_test() == FAIL) {
+    ++num_of_failed_tests;
+    printf("FAILED on constructor-distructore\n");
+  } else {
+    printf("PASSED constructor-distructore test\n");
+    ++num_of_passed_tests;
+  }
+
   if (test_set_get_element_exp() == FAIL) {
     ++num_of_failed_tests;
     printf("FAILED on set-get\n");
@@ -225,11 +233,11 @@ int main(int argc, char* argv[]) {
     ++num_of_passed_tests;
   }
 
-  if (test_pull_next() == FAIL) {
+  if (test_pop_next() == FAIL) {
     ++num_of_failed_tests;
-    printf("FAILED on pull_next\n");
+    printf("FAILED on pop_next\n");
   } else {
-    printf("PASSED pull_next test\n");
+    printf("PASSED pop_next test\n");
     ++num_of_passed_tests;
   }
 
@@ -241,11 +249,11 @@ int main(int argc, char* argv[]) {
     ++num_of_passed_tests;
   }
 
-  if (test_wait_and_pull() == FAIL) {
+  if (test_pop_wait() == FAIL) {
     ++num_of_failed_tests;
-    printf("FAILED on wait_and_pull\n");
+    printf("FAILED on pop_wait\n");
   } else {
-    printf("PASSED wait_and_pull\n");
+    printf("PASSED pop_wait\n");
     ++num_of_passed_tests;
   }
 

@@ -2,6 +2,7 @@
 #include "redismodule.h"
 #include "rmutil/util.h"
 #include "rmutil/strings.h"
+#include "rmutil/periodic.h"
 #include "util/millisecond_time.h"
 
 #define RTEXP_BUFFER_MS 5
@@ -58,6 +59,15 @@ int redisSetWithExpiration(RedisModuleCtx *ctx, RedisModuleString *element_key,
   return REDISMODULE_OK;
 }
 
+void timerCb(RedisModuleCtx *ctx, void *p) {
+  RTXStore *store = p;
+  mstime_t now = current_time_ms();  // RedisModule_Milliseconds();
+  if (next_at(store) < now) {
+    char *expired_key = pop_next(store);
+    // TODO: EXPIRE expired_key with UNLINK command
+  }
+}
+
 /********************
  *    DS Binding
  ********************/
@@ -82,6 +92,8 @@ mstime_t get_ttl(RTXStore *store, char *element_key) {
 /************************
  *    Module Commands
  ************************/
+
+// TODO: add DEL function to store
 
 // 1. REXPIRE {key} {ttl_ms}
 int ExpireCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
@@ -208,20 +220,46 @@ int ExecuteAndExpireCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int a
   return REDISMODULE_OK;
 }
 
+int CreateRTEXPCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+  if (argc < 5) {
+    return RedisModule_WrongArity(ctx);
+  }
+  RedisModule_AutoMemory(ctx);
+  RedisModule_ReplicateVerbatim(ctx);
+  char *err;
+
+  RTXStore *rtxStore = newRTXStore();
+
+  // assert(ctx->timer == NULL);  // TODO: how should I add a timer to the context?
+  // there is one in redisearch GarbageCollectorCtx
+  struct RMUtilTimer *tm = RMUtil_NewPeriodicTimer(  // ctx->timer
+      timerCb, NULL, &rtxStore,
+      (struct timespec){
+          .tv_sec = 0,
+          .tv_nsec =
+              10000000});  // TODO: existing Expire is on milliseconds scale, what shold this be?
+
+  return RedisModule_ReplyWithSimpleString(ctx, "OK");
+}
+
 // Init Module
 int RedisModule_OnLoad(RedisModuleCtx *ctx) {
   // Register the module itself
-  if (RedisModule_Init(ctx, "REALEX", 1, REDISMODULE_APIVER_1) == REDISMODULE_ERR) {
+  if (RedisModule_Init(ctx, "RTEXP", 1, REDISMODULE_APIVER_1) == REDISMODULE_ERR) {
     return REDISMODULE_ERR;
   }
 
+  RedisModule_AutoMemory(ctx);
+
   // register commands - using the shortened utility registration macro
-  RMUtil_RegisterReadCmd(ctx, "REXPIRE", ExpireCommand);
-  RMUtil_RegisterReadCmd(ctx, "REXPIREAT", ExpireAtCommand);
-  RMUtil_RegisterReadCmd(ctx, "RTTL", TTLCommand);
-  RMUtil_RegisterReadCmd(ctx, "RUNEXPIRE", UnexpireCommand);
-  RMUtil_RegisterReadCmd(ctx, "RSETEX", SetexCommand);
-  RMUtil_RegisterReadCmd(ctx, "REXECEX", ExecuteAndExpireCommand);
+  // TODO: not all of these are read commands
+  // RMUtil_RegisterReadCmd(ctx, "START", CreateRTEXPCommand);  // "write deny-oom"
+  // RMUtil_RegisterReadCmd(ctx, "REXPIRE", ExpireCommand);
+  // RMUtil_RegisterReadCmd(ctx, "REXPIREAT", ExpireAtCommand);
+  // RMUtil_RegisterReadCmd(ctx, "RTTL", TTLCommand);
+  // RMUtil_RegisterReadCmd(ctx, "RUNEXPIRE", UnexpireCommand);
+  // RMUtil_RegisterReadCmd(ctx, "RSETEX", SetexCommand);
+  // RMUtil_RegisterReadCmd(ctx, "REXECEX", ExecuteAndExpireCommand);
 
   return REDISMODULE_OK;
 }
