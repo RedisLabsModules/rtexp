@@ -3,8 +3,9 @@ ifndef RM_INCLUDE_DIR
 	RM_INCLUDE_DIR=../
 endif
 
-CFLAGS ?= -g -fPIC -O3 -std=gnu99 -Wall -Wno-unused-function
-CFLAGS += -I$(RM_INCLUDE_DIR)
+CFLAGS ?= -g -fPIC -lc -lm -O3 -std=gnu99 -I$(RM_INCLUDE_DIR) -Wall -Wno-unused-function \
+		-DREDISMODULE_EXPERIMENTAL_API
+
 CC=gcc
 
 OBJS=util.o strings.o sds.o vector.o alloc.o periodic.o

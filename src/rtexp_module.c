@@ -6,18 +6,6 @@
 
 #define RTEXP_BUFFER_MS 5
 
-/********************
- *    C Utils
- ********************/
-
-char *string_append(char *a, const char *b) {
-  char *retstr = RedisModule_Alloc(strlen(a) + strlen(b));
-  strcpy(retstr, a);
-  strcat(retstr, b);
-  // printf("printing: %s", retstr);
-  RedisModule_Free(a);
-  return retstr;
-}
 
 /********************
  *    Redis Type
@@ -134,6 +122,7 @@ int ExpireAtCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     return REDISMODULE_ERR;
   }
   mstime_t ttl_ms = timestamp_ms - current_time_ms();  // RedisModule_Milliseconds();
+  // TODO: verify timestamp not in the past and return specific error
 
   if (set_ttl(store, element_key, ttl_ms) == REDISMODULE_OK) {
     RedisModule_ReplyWithSimpleString(ctx, "OK");
