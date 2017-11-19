@@ -17,9 +17,11 @@
  ***************************/
 RTXElementNode* newRTXElementNode(char* key, mstime_t timestamp_ms, int version) {
   RTXElementNode* node = malloc(sizeof(RTXElementNode));
+  // TODO: RedisModule_Strndup;
+  // TODO: Add key length
   node->key = key;
-  node->expiration = timestamp_ms;
-  node->version = version;
+  node->exp.time = timestamp_ms;
+  node->exp.version = version;
   return node;
 }
 
@@ -32,12 +34,18 @@ void RTXStore_Free(RTXStore* store) {
 /*
  * Update expiration, increase the version num, keep the name
  */
-void* _trie_node_updater(RTXElementNode* oldval, RTXElementNode* newval) {
-  return newRTXElementNode(oldval->key, newval->expiration, ++(oldval->version));
+void* _trie_node_updater(void* oldval, void* newval) {
+  RTXExpiration *n = newval, *o = oldval;
+  if (o) {
+    n->version = o->version+1;
+    free(o);
+  }
+  
+  return newval;  
 }
 
 int _cmp_node(const RTXElementNode* node_a, const RTXElementNode* node_b, const void* udata) {
-  return node_b->expiration - node_a->expiration;
+  return node_b->exp.time - node_a->exp.time;
 }
 
 /*
@@ -49,9 +57,9 @@ int _is_valid_node(RTXStore* store, RTXElementNode* node) {
   }
   char* key = node->key;
   TrieMap* t = store->element_node_map;
-  RTXElementNode* stored_node = TrieMap_Find(t, key, strlen(key));
+  RTXExpiration* stored_node = TrieMap_Find(t, key, strlen(key));
   if (stored_node != NULL && stored_node != TRIEMAP_NOTFOUND)
-    return (node->version == stored_node->version);
+    return (node->exp.version == stored_node->version);
   else
     return 0;
 }
@@ -91,16 +99,17 @@ RTXStore* newRTXStore(void) {
 int set_element_exp(RTXStore* store, char* key, mstime_t ttl_ms) {
   TrieMap* t = store->element_node_map;
   mstime_t timestamp_ms = current_time_ms() + ttl_ms;
-  RTXElementNode* new_node = newRTXElementNode(key, timestamp_ms, 0);
-  int trie_result = TrieMap_Add(t, key, strlen(key), new_node, _trie_node_updater);
-
-  if (trie_result == 0) {  // we replaced an existing element
-    RTXElementNode* stored_node = TrieMap_Find(t, key, strlen(key));
-    new_node->version = stored_node->version;
-  }
+  RTXExpiration* exp = malloc(sizeof(*exp)); 
+  exp->time = timestamp_ms;
+  exp->version = 0; 
+  
+  int trie_result = TrieMap_Add(t, key, strlen(key), exp, _trie_node_updater);
+  
+  // EXP's version was updated by the updater callback
+  RTXElementNode *node = newRTXElementNode(key, ttl_ms, exp->version);
 
   heap_t* h = store->sorted_keys;
-  int heap_result = heap_offer(&h, new_node);
+  int heap_result = heap_offer(&h, node);
   if (heap_result != 0) {  // we failed inserting into the heap, back out of everything
     // TODO: for now let's (wrongly) assume we will not get here and just return with error, but
     //       this needs writing
@@ -117,7 +126,7 @@ mstime_t get_element_exp(RTXStore* store, char* key) {
   TrieMap* t = store->element_node_map;
   RTXElementNode* element_node = TrieMap_Find(t, key, strlen(key));
   if (element_node != NULL && element_node != TRIEMAP_NOTFOUND) {
-    return element_node->expiration;
+    return element_node->exp.time;
   }
   return -1;
 }
@@ -140,7 +149,7 @@ mstime_t next_at(RTXStore* store) {
   if (node == NULL) {  // empty_DS
     return -1;
   } else {
-    return node->expiration;
+    return node->exp.time;
   }
 }
 
@@ -148,7 +157,7 @@ mstime_t next_at(RTXStore* store) {
  * Remove the element with the closest expiration datetime from the data store and return it's key
  * @return the key of the element with closest expiration datetime
  */
-char* pull_next(RTXStore* store) {
+char* pop_wait(RTXStore* store) {
   RTXElementNode* node = _peek_next(store);
   if (node != NULL) {  // a non empty DS
     node = heap_poll(store->sorted_keys);
