@@ -96,8 +96,8 @@ int test_next_at() {
   if ((set_element_exp(store, key1, ttl_ms1) != RTXS_ERR) &&
       (set_element_exp(store, key2, ttl_ms2) != RTXS_ERR) &&
       (set_element_exp(store, key3, ttl_ms3) != RTXS_ERR) &&
-      (set_element_exp(store, key4, ttl_ms4) != RTXS_ERR) &&
-      (del_element_exp(store, key2) != RTXS_ERR)) {
+      (del_element_exp(store, key2) != RTXS_ERR) &&
+      (set_element_exp(store, key4, ttl_ms4) != RTXS_ERR)) {
 
     mstime_t expected = current_time_ms() + ttl_ms3;
     mstime_t saved_ms = next_at(store);
