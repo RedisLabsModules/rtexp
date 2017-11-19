@@ -5,8 +5,7 @@
   - [ ] define a global with the store key
   - [ ] on rdb load look at the global and use it as key
   - [ ] if on rdb load we already have an open key MERGE stores
-- [ ] use key, key_len pairs everywhere
-- [ ] add background task to poll Store
+- [X] use key, key_len pairs everywhere
 - [ ] add DEL function to store
 - [ ] bind lib to redis module commands
     - [X] REXPIRE
@@ -16,8 +15,10 @@
     - [X] RSETEX
     - [ ] REXECEX
     - [ ] Make sure to bind commands correctly in terms of read/write
-- [ ] Add auto expiration (using UNLINK)
+- [X] expire using UNLINK
+- [ ] Add auto expiration
     - [ ] maybe sleep until closest and interrupt on any expiration update
+    - [ ] add background task to poll Store
 - [ ] add rtexp as redis type
 - [ ] add some decent seatbelts:
     - [ ] redisSetWithExpiration

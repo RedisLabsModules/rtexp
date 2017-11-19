@@ -30,6 +30,12 @@ void freeRTXElementNode(RTXElementNode* node) {
   rm_free(node);
 }
 
+size_t expiration_count(RTXStore* store){
+  if (store)
+    return heap_count(store->sorted_keys);    
+  return 0;
+}
+
 void RTXStore_Free(RTXStore* store) {
   TrieMap_Free(store->element_node_map, NULL);
   while (heap_count(store->sorted_keys) != 0) {

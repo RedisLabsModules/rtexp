@@ -3,6 +3,10 @@
 #include <time.h>
 #include <math.h>
 
+
+/*
+ * @return current time in milliseconds
+ */
 mstime_t current_time_ms(void) {
   long ms;   // Milliseconds
   time_t s;  // Seconds

@@ -40,6 +40,11 @@ void RTXStore_Free(RTXStore* store);
  ************************************/
 
 /*
+ * @return the number of uniqe expiration entries in the store
+ */
+size_t expiration_count(RTXStore* store);
+
+/*
  * Insert expiration for a new key or update an existing one
  * @return RTXS_OK on success, RTXS_ERR on error
  */
