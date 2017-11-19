@@ -12,14 +12,19 @@
  *        STRUCTS
  ***************************/
 
+typedef struct {
+   mstime_t time;
+  int version;
+} RTXExpiration;
+
 typedef struct rtxs_node {
   char* key;
-  mstime_t expiration;
-  int version;
+  // TODO: size_t len;
+  RTXExpiration exp;
 } RTXElementNode;
 
 typedef struct rtxs_store {
-  heap_t* sorted_keys;        // [exp] -> <key, exp_version>
+  heap_t* sorted_keys;        // [exp] -> <key, exp_version, timestamp>
   TrieMap* element_node_map;  // [key] -> <exp_version, exp_timestamp>
 } RTXStore;
 
@@ -61,13 +66,13 @@ mstime_t next_at(RTXStore* store);
  * Remove the element with the closest expiration datetime from the data store and return it's key
  * @return the key of the element with closest expiration datetime
  */
-char* pull_next(RTXStore* store);
+char* pop_next(RTXStore* store);
 
 /*
  * Wait Remove the element with the closest expiration datetime from the data store and return it's
  * key
  * @return the key of the element with closest expiration datetime
  */
-char* wait_and_pull(RTXStore* store);
+char* pop_wait(RTXStore* store);
 
 #endif
