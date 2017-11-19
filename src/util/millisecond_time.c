@@ -3,7 +3,6 @@
 #include <time.h>
 #include <math.h>
 
-
 /*
  * @return current time in milliseconds
  */

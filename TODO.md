@@ -1,12 +1,7 @@
 # TBD
 - [X] write lib tests
-- [ ] add -DREDIS_MODULE_TARGET for that redis module
-- [ ] random store key
-  - [ ] define a global with the store key
-  - [ ] on rdb load look at the global and use it as key
-  - [ ] if on rdb load we already have an open key MERGE stores
+- [ ] add -DREDIS_MODULE_TARGET for that redis module - TEST ME!
 - [X] use key, key_len pairs everywhere
-- [ ] add DEL function to store
 - [ ] bind lib to redis module commands
     - [X] REXPIRE
     - [X] REXPIREAT
@@ -18,11 +13,19 @@
 - [X] expire using UNLINK
 - [ ] Add auto expiration
     - [ ] maybe sleep until closest and interrupt on any expiration update
-    - [ ] add background task to poll Store
+    - [ ] add background task to poll Store - TEST ME!
 - [ ] add rtexp as redis type
 - [ ] add some decent seatbelts:
-    - [ ] redisSetWithExpiration
+    - [X] redisSetWithExpiration
+    - [ ] add some cleanup on module termination
 - [ ] write module tests
 - [ ] write documentation for lib
 - [ ] write documentation for redis module
 - [ ] clean Makefiles
+
+# deferred tasks -  these may no be needed, time will tell
+- [ ] add DEL function to store
+- [ ] random store key
+    - [ ] define a global with the store key
+    - [ ] on rdb load look at the global and use it as key
+    - [ ] if on rdb load we already have an open key MERGE stores
