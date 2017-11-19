@@ -7,6 +7,7 @@
 #include "trie/triemap.h"
 #include "util/heap.h"
 #include "util/millisecond_time.h"
+#include "util/rmalloc.h"
 
 #include <time.h>
 
@@ -15,20 +16,28 @@
 /***************************
  *   Datastructure Utils
  ***************************/
-RTXElementNode* newRTXElementNode(char* key, mstime_t timestamp_ms, int version) {
+RTXElementNode* newRTXElementNode(char* key, size_t len, mstime_t timestamp_ms, int version) {
   RTXElementNode* node = malloc(sizeof(RTXElementNode));
-  // TODO: RedisModule_Strndup;
-  // TODO: Add key length
-  node->key = key;
+  node->key = rm_strndup(key, len);
+  node->len = len;
   node->exp.time = timestamp_ms;
   node->exp.version = version;
   return node;
 }
 
+void freeRTXElementNode(RTXElementNode* node) {
+  rm_free(node->key);
+  rm_free(node);
+}
+
 void RTXStore_Free(RTXStore* store) {
   TrieMap_Free(store->element_node_map, NULL);
+  while (heap_count(store->sorted_keys) != 0) {
+    RTXElementNode* node = heap_poll(store->sorted_keys);
+    freeRTXElementNode(node);
+  }  
   heap_free(store->sorted_keys);
-  free(store);
+  rm_free(store);
 }
 
 /*
@@ -38,14 +47,15 @@ void* _trie_node_updater(void* oldval, void* newval) {
   RTXExpiration *n = newval, *o = oldval;
   if (o) {
     n->version = o->version+1;
-    free(o);
+    rm_free(o);
   }
   
   return newval;  
 }
 
-int _cmp_node(const RTXElementNode* node_a, const RTXElementNode* node_b, const void* udata) {
-  return node_b->exp.time - node_a->exp.time;
+int _cmp_node(const void* node_a, const void* node_b, const void* udata) {
+  const RTXElementNode *a=node_a, *b=node_b;
+  return b->exp.time - a->exp.time;
 }
 
 /*
@@ -75,7 +85,8 @@ RTXElementNode* _peek_next(RTXStore* store) {
     if (_is_valid_node(store, node)) {
       return node;
     } else {
-      heap_poll(h);
+      RTXElementNode* polled_node = heap_poll(store->sorted_keys);
+      freeRTXElementNode(polled_node);
     }
   }
   return NULL;
@@ -96,7 +107,7 @@ RTXStore* newRTXStore(void) {
  * Insert expiration for a new key or update an existing one
  * @return RTXS_OK on success, RTXS_ERR on error
  */
-int set_element_exp(RTXStore* store, char* key, mstime_t ttl_ms) {
+int set_element_exp(RTXStore* store, char* key, size_t len, mstime_t ttl_ms) {
   TrieMap* t = store->element_node_map;
   mstime_t timestamp_ms = current_time_ms() + ttl_ms;
   RTXExpiration* exp = malloc(sizeof(*exp)); 
@@ -104,10 +115,10 @@ int set_element_exp(RTXStore* store, char* key, mstime_t ttl_ms) {
   exp->time = timestamp_ms;
   exp->version = 0; 
   
-  int trie_result = TrieMap_Add(t, key, strlen(key), exp, _trie_node_updater);
+  int trie_result = TrieMap_Add(t, key, len, exp, _trie_node_updater);
   
   // EXP's version was updated by the trie updater callback
-  RTXElementNode *node = newRTXElementNode(key, exp->time, exp->version);
+  RTXElementNode *node = newRTXElementNode(key, len, exp->time, exp->version);
 
   heap_t* h = store->sorted_keys;
   int heap_result = heap_offer(&h, node);
@@ -162,8 +173,9 @@ char* pop_next(RTXStore* store) {
   RTXElementNode* node = _peek_next(store);
   if (node != NULL) {  // a non empty DS
     node = heap_poll(store->sorted_keys);
-    char* key = strdup(node->key);
+    char* key = rm_strdup(node->key);
     del_element_exp(store, node->key);
+    freeRTXElementNode(node);
     return key;
   }
   return NULL;

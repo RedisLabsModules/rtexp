@@ -2,7 +2,7 @@ ifndef RM_INCLUDE_DIR
 	RM_INCLUDE_DIR=../
 endif
 
-CFLAGS = -g -O2 -fPIC -std=gnu99 -I./
+CFLAGS = -g -O2 -fPIC -std=gnu99 -I./ 
 CFLAGS += -I$(RM_INCLUDE_DIR)
 %.c: %.y
 
@@ -33,7 +33,7 @@ TEST_DEPS = $(patsubst %.c, %.d,$(TEST_SOURCES))
 DEP_LIBS = ../rmutil/librmutil.a ../trie/libtriemap.a #./dep/triemap/libtriemap.a ../dep/libnu/libnu.a ../dep/snowball/libstemmer.o
 DEPS = $(DEP_OBJECTS) $(DEP_LIBS)
 SRCDIR := $(shell pwd)
-LDFLAGS :=  -lc -lm -ldl -lpthread
+LDFLAGS :=  -lc -lm -ldl -lpthread 
 
 CC=gcc
 

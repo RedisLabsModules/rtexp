@@ -13,8 +13,7 @@ endif
 
 # Default CFLAGS
 CFLAGS= -Wall -Wno-unused-function -Wno-unused-variable -Wno-unused-result -fPIC \
- 	-D_GNU_SOURCE -std=gnu99 -I"$(shell pwd)" -DREDIS_MODULE_TARGET \
-	-DREDISMODULE_EXPERIMENTAL_API 
+ 	-D_GNU_SOURCE -std=gnu99 -I"$(shell pwd)" -DREDISMODULE_EXPERIMENTAL_API 
 CFLAGS += $(DEBUGFLAGS)
 
 # Compile flags for linux / osx
@@ -110,7 +109,7 @@ buildall:  rtexp.so build_tests #librtexp.so
 rtexp.so: $(MODULE) version.h
 	# Just to make sure old versions of the modules are deleted
 	rm -f rtexp.so
-	$(LD) -o $@ $(MODULE) $(SHOBJ_LDFLAGS) -lc -lm
+	$(LD) -o $@ $(MODULE) $(SHOBJ_LDFLAGS) -lc -lm 
 
 # Build a stand-alone static library without the module entry point.
 # This is used to include the module's functionality in other modules

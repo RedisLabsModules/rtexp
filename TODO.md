@@ -1,5 +1,6 @@
 # TBD
 - [X] write lib tests
+- [ ] add -DREDIS_MODULE_TARGET for that redis module
 - [ ] random store key
   - [ ] define a global with the store key
   - [ ] on rdb load look at the global and use it as key
@@ -15,7 +16,7 @@
     - [X] RSETEX
     - [ ] REXECEX
     - [ ] Make sure to bind commands correctly in terms of read/write
-- [ ] Add auto expiration (using DEL?)
+- [ ] Add auto expiration (using UNLINK)
     - [ ] maybe sleep until closest and interrupt on any expiration update
 - [ ] add rtexp as redis type
 - [ ] add some decent seatbelts:

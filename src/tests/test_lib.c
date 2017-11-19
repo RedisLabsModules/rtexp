@@ -25,6 +25,19 @@ int constructor_distructore_test() {
  * @return RTXS_OK on success, RTXS_ERR on error
  */
 // int set_element_exp(RTXStore* store, char* key, mstime_t ttl_ms);
+int test_set_element_exp() {
+  int retval = FAIL;
+  mstime_t ttl_ms = 10000;
+  mstime_t expected = current_time_ms() + ttl_ms;
+  char* key = "set_get_test_key";
+  RTXStore* store = newRTXStore();
+  if (set_element_exp(store, key, strlen(key), ttl_ms) == RTXS_ERR) return FAIL;
+  retval = SUCCESS;
+
+  RTXStore_Free(store);
+  return retval;
+}
+
 
 /*
  * Get the expiration value for the given key
@@ -37,7 +50,7 @@ int test_set_get_element_exp() {
   mstime_t expected = current_time_ms() + ttl_ms;
   char* key = "set_get_test_key";
   RTXStore* store = newRTXStore();
-  if (set_element_exp(store, key, ttl_ms) == RTXS_ERR) return FAIL;
+  if (set_element_exp(store, key, strlen(key), ttl_ms) == RTXS_ERR) return FAIL;
   mstime_t saved_ms = get_element_exp(store, key);
   if (saved_ms != expected) {
     printf("ERROR: expected %llu but found %llu\n", expected, saved_ms);
@@ -60,7 +73,7 @@ int test_del_element_exp() {
   mstime_t expected = -1;
   char* key = "del_test_key";
   RTXStore* store = newRTXStore();
-  if (set_element_exp(store, key, ttl_ms) == RTXS_ERR) return FAIL;
+  if (set_element_exp(store, key, strlen(key), ttl_ms) == RTXS_ERR) return FAIL;
   if (del_element_exp(store, key) == RTXS_ERR) return FAIL;
   mstime_t saved_ms = get_element_exp(store, key);
   if (saved_ms != expected) {
@@ -93,11 +106,11 @@ int test_next_at() {
   mstime_t ttl_ms4 = 400000;
   char* key4 = "next_at_test_key_4";
 
-  if ((set_element_exp(store, key1, ttl_ms1) != RTXS_ERR) &&
-      (set_element_exp(store, key2, ttl_ms2) != RTXS_ERR) &&
-      (set_element_exp(store, key3, ttl_ms3) != RTXS_ERR) &&
+  if ((set_element_exp(store, key1, strlen(key1), ttl_ms1) != RTXS_ERR) &&
+      (set_element_exp(store, key2, strlen(key2), ttl_ms2) != RTXS_ERR) &&
+      (set_element_exp(store, key3, strlen(key3), ttl_ms3) != RTXS_ERR) &&
       (del_element_exp(store, key2) != RTXS_ERR) &&
-      (set_element_exp(store, key4, ttl_ms4) != RTXS_ERR)) {
+      (set_element_exp(store, key4, strlen(key4), ttl_ms4) != RTXS_ERR)) {
 
     mstime_t expected = current_time_ms() + ttl_ms3;
     mstime_t saved_ms = next_at(store);
@@ -130,10 +143,10 @@ int test_pop_next() {
   mstime_t ttl_ms3 = 3000;
   char* key3 = "pop_next_test_key_3";
 
-  if ((set_element_exp(store, key1, ttl_ms1) != RTXS_ERR) &&
-      (set_element_exp(store, key2, ttl_ms2) != RTXS_ERR) &&
+  if ((set_element_exp(store, key1, strlen(key1), ttl_ms1) != RTXS_ERR) &&
+      (set_element_exp(store, key2, strlen(key2), ttl_ms2) != RTXS_ERR) &&
       (del_element_exp(store, key2) != RTXS_ERR) &&
-      (set_element_exp(store, key3, ttl_ms3) != RTXS_ERR)) {
+      (set_element_exp(store, key3, strlen(key3), ttl_ms3) != RTXS_ERR)) {
 
     char* expected = key3;
     char* actual = pop_next(store);
@@ -150,8 +163,8 @@ int test_pop_next() {
       } else
         retval = SUCCESS;
     }
+    free(actual);
   }
-
   RTXStore_Free(store);
   return retval;
 }
@@ -175,10 +188,10 @@ int test_pop_wait() {
   mstime_t ttl_ms3 = 3000;
   char* key3 = "pop_next_test_key_3";
 
-  if ((set_element_exp(store, key1, ttl_ms1) != RTXS_ERR) &&
-      (set_element_exp(store, key2, ttl_ms2) != RTXS_ERR) &&
+  if ((set_element_exp(store, key1, strlen(key1), ttl_ms1) != RTXS_ERR) &&
+      (set_element_exp(store, key2, strlen(key2), ttl_ms2) != RTXS_ERR) &&
       (del_element_exp(store, key2) != RTXS_ERR) &&
-      (set_element_exp(store, key3, ttl_ms3) != RTXS_ERR)) {
+      (set_element_exp(store, key3, strlen(key3), ttl_ms3) != RTXS_ERR)) {
 
     mstime_t expected_ms = ttl_ms3;
     char* expected_key = key3;
@@ -198,8 +211,8 @@ int test_pop_wait() {
       } else
         retval = SUCCESS;
     }
+    free(pulled_key);
   }
-
   RTXStore_Free(store);
   return retval;
 }
@@ -214,6 +227,14 @@ int main(int argc, char* argv[]) {
     printf("FAILED on constructor-distructore\n");
   } else {
     printf("PASSED constructor-distructore test\n");
+    ++num_of_passed_tests;
+  }
+
+  if (test_set_element_exp() == FAIL) {
+    ++num_of_failed_tests;
+    printf("FAILED on set\n");
+  } else {
+    printf("PASSED set test\n");
     ++num_of_passed_tests;
   }
 

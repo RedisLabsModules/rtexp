@@ -13,13 +13,13 @@
  ***************************/
 
 typedef struct {
-   mstime_t time;
+  mstime_t time;
   int version;
 } RTXExpiration;
 
 typedef struct rtxs_node {
   char* key;
-  // TODO: size_t len;
+  size_t len;
   RTXExpiration exp;
 } RTXElementNode;
 
@@ -43,7 +43,7 @@ void RTXStore_Free(RTXStore* store);
  * Insert expiration for a new key or update an existing one
  * @return RTXS_OK on success, RTXS_ERR on error
  */
-int set_element_exp(RTXStore* store, char* key, mstime_t ttl_ms);
+int set_element_exp(RTXStore* store, char* key, size_t len, mstime_t ttl_ms);
 
 /*
  * Get the expiration value for the given key
