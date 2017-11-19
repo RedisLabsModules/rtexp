@@ -9,9 +9,13 @@
 #include "util/rmalloc.h"
 
 #define RTEXP_BUFFER_MS 5
+#define RTEXP_MIN_INTERVAL_NS 1000 // = microsecond (10^-6) scale. existing Expire is on milliseconds (10^-3) scale
+#define RTEXP_MAX_INTERVAL_NS 10000000 // = 10 millisecond (0.01 second) scale
 
 static RTXStore *rtxStore;
+static struct RMUtilTimer *interval_timer;
 
+typedef long long nstime_t;
 /************************
  *    Module Utils
  ************************/
@@ -37,14 +41,39 @@ int redisSetWithExpiration(RedisModuleCtx *ctx, RedisModuleString *element_key,
   return REDISMODULE_OK;
 }
 
+
+nstime_t to_ns(mstime_t ms) {
+  return ms * 1000000;
+}
+
+void setNextTimerInterval(mstime_t interval_ms){
+  nstime_t interval_ns = to_ns(interval_ms);
+  nstime_t new_interval_ns = (interval_ns < RTEXP_MAX_INTERVAL_NS)? interval_ms : RTEXP_MAX_INTERVAL_NS;
+  new_interval_ns = new_interval_ns / 2; // Safety buffer - asimptotically get closet to the timeout
+  
+  RMUtilTimer_SetInterval(interval_timer, 
+    (struct timespec){
+    .tv_sec = 0,
+    .tv_nsec = new_interval_ns});
+}
+
 void timerCb(RedisModuleCtx *ctx, void *p) {
+  RedisModule_ThreadSafeContextLock(ctx);
+
   RTXStore *store = p;
   mstime_t now = rm_current_time_ms();
-  if (next_at(store) < now) {
+  nstime_t now_ns = to_ns(now);
+
+  mstime_t next = next_at(store);
+  while (to_ns(next) < (now_ns+RTEXP_MIN_INTERVAL_NS)) {
     char *expired_key = pop_next(store);
     RedisModule_Call(ctx, "UNLINK", "c", expired_key);
     rm_free(expired_key);
+    next = next_at(store);
   }
+  
+  setNextTimerInterval(next);
+  RedisModule_ThreadSafeContextUnlock(ctx);
 }
 
 /********************
@@ -213,13 +242,11 @@ int CreateRTEXP() {
   RedisModuleCtx *ctx = RedisModule_GetThreadSafeContext(NULL);
   
   rtxStore = newRTXStore();
-
-  struct RMUtilTimer *tm = RMUtil_NewPeriodicTimer( 
+  interval_timer = RMUtil_NewPeriodicTimer( 
       timerCb, NULL, &rtxStore,
       (struct timespec){
           .tv_sec = 0,
-          .tv_nsec =
-              1000});  // microsecond (10^-6) scale. existing Expire is on milliseconds (10^-3) scale
+          .tv_nsec = RTEXP_MIN_INTERVAL_NS});  
 
   return RedisModule_ReplyWithSimpleString(ctx, "OK");
 }

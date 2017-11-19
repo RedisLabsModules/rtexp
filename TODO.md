@@ -9,12 +9,12 @@
     - [X] RUNEXPIRE
     - [X] RSETEX
     - [ ] REXECEX
-    - [ ] Make sure to bind commands correctly in terms of read/write
+    - [ ] Make sure to bind commands correctly in terms of read/write  - TEST ME!
 - [X] expire using UNLINK
+- [ ] add notification mechanism (note whenever somthing is expired)
 - [ ] Add auto expiration
-    - [ ] maybe sleep until closest and interrupt on any expiration update
+    - [ ] maybe sleep until closest and interrupt on any expiration update - TEST ME!
     - [ ] add background task to poll Store - TEST ME!
-- [ ] add rtexp as redis type
 - [ ] add some decent seatbelts:
     - [X] redisSetWithExpiration
     - [ ] add some cleanup on module termination
@@ -24,6 +24,7 @@
 - [ ] clean Makefiles
 
 # deferred tasks -  these may no be needed, time will tell
+- [ ] add rtexp as redis type
 - [ ] add DEL function to store
 - [ ] random store key
     - [ ] define a global with the store key
