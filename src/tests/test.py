@@ -17,15 +17,14 @@ def test_REXPIRE_RTTL(redis_service):
     ttl_ms = 10000
     expected = current_time_ms() + ttl_ms
     key = "set_get_test_key"
-    redis_service.execute_command("rtexp.REXPIRE", key, ttl_ms)
-    saved_ms = redis_service.execute_command("rtexp.RTTL", key)
+    redis_service.execute_command("REXPIRE", key, ttl_ms)
+    saved_ms = redis_service.execute_command("RTTL", key)
     if (saved_ms != expected):
         sys.stdout.write("ERROR: expected {} but found {}\n".format(expected, saved_ms))
         retval = False
     else:
         retval = True
 
-    redis_service.execute_command("rtexp.DEL", store)
     return retval
 
 
@@ -36,15 +35,14 @@ def test_REXPIREAT_RTTL(redis_service):
     timestamp_ms = current_time_ms() + 10000
     expected = timestamp_ms
     key = "set_at_test_key"
-    redis_service.execute_command("rtexp.REXPIREAT", key, timestamp_ms)
-    saved_ms = redis_service.execute_command("rtexp.RTTL", key)
+    redis_service.execute_command("REXPIREAT", key, timestamp_ms)
+    saved_ms = redis_service.execute_command("RTTL", key)
     if (saved_ms != expected):
         sys.stdout.write("ERROR: expected {} but found {}\n".format(expected, saved_ms))
         retval = False
     else:
         retval = True
 
-    redis_service.execute_command("rtexp.DEL", store)
     return retval
 
 
@@ -54,16 +52,15 @@ def test_RUNEXPIRE(redis_service):
     ttl_ms = 10000
     expected = -1
     key = "del_exp_test_key"
-    redis_service.execute_command("rtexp.REXPIRE", key, ttl_ms)
-    redis_service.execute_command("rtexp.RUNEXPIRE", key)
-    saved_ms = redis_service.execute_command("rtexp.RTTL", key)
+    redis_service.execute_command("REXPIRE", key, ttl_ms)
+    redis_service.execute_command("RUNEXPIRE", key)
+    saved_ms = redis_service.execute_command("RTTL", key)
     if (saved_ms != expected):
         sys.stdout.write("ERROR: expected {} but found {}\n".format(expected, saved_ms))
         retval = False
     else:
         retval = True
 
-    redis_service.execute_command("rtexp.DEL", store)
     return retval
 
 
@@ -74,9 +71,9 @@ def test_RSETEX(redis_service):
     value = "test_value"
     expected_ms = current_time_ms() + ttl_ms
     key = "set_get_test_key"
-    redis_service.execute_command("rtexp.RSETEX", key, value, ttl_ms)
-    saved_ms = redis_service.execute_command("rtexp.RTTL", key)
-    saved_value = redis_service.execute_command("rtexp.RSETEX", key, value, ttl_ms)
+    redis_service.execute_command("RSETEX", key, value, ttl_ms)
+    saved_ms = redis_service.execute_command("RTTL", key)
+    saved_value = redis_service.execute_command("RSETEX", key, value, ttl_ms)
     if (saved_ms != expected_ms):
         sys.stdout.write("ERROR: expected {} but found {}\n".format(expected_ms, saved_ms))
         retval = False
@@ -91,15 +88,15 @@ def test_RSETEX(redis_service):
 
 
 def run_internal_test(redis_service):
-    sys.stdout.write("module functional test (internal) - ")
+    sys.stdout.write("module functional test (internal) - \n")
     sys.stdout.flush()
-    sys.stdout.write("UNIMPLEMENTED!")
+    sys.stdout.write("UNIMPLEMENTED!\n")
     return True
     sys.stdout.write(redis_service.execute_command("RTEXP.TEST"))
 
 
 def function_test_rtexp(redis_service):
-    sys.stdout.write("module functional test (external) - ")
+    sys.stdout.write("module functional test (external) - \n")
     sys.stdout.flush()
     start_time = current_time_ms()
     num_of_FAILED_tests = 0
@@ -107,41 +104,41 @@ def function_test_rtexp(redis_service):
 
     if (test_REXPIRE_RTTL(redis_service) == False):
         num_of_FAILED_tests += 1
-        sys.stdout.write("FAILED on REXPIRE_RTTL")
+        sys.stdout.write("FAILED on REXPIRE_RTTL\n")
     else:
-        sys.stdout.write("PASSED REXPIRE_RTTL test")
+        sys.stdout.write("PASSED REXPIRE_RTTL test\n")
         num_of_passed_tests += 1
 
     if (test_REXPIREAT_RTTL(redis_service) == False):
         num_of_FAILED_tests +=1
-        sys.stdout.write("FAILED on REXPIREAT_RTTL")
+        sys.stdout.write("FAILED on REXPIREAT_RTTL\n")
     else:
-        sys.stdout.write("PASSED REXPIREAT_RTTL test")
+        sys.stdout.write("PASSED REXPIREAT_RTTL test\n")
         num_of_passed_tests +=1
   
 
     if (test_RUNEXPIRE(redis_service) == False):
         num_of_FAILED_tests +=1
-        sys.stdout.write("FAILED on RUNEXPIRE")
+        sys.stdout.write("FAILED on RUNEXPIRE\n")
     else:
-        sys.stdout.write("PASSED RUNEXPIRE test")
+        sys.stdout.write("PASSED RUNEXPIRE test\n")
         num_of_passed_tests +=1
 
 
     if (test_RSETEX(redis_service) == False):
         num_of_FAILED_tests +=1
-        sys.stdout.write("FAILED on RSETEX")
+        sys.stdout.write("FAILED on RSETEX\n")
     else:
-        sys.stdout.write("PASSED RSETEX test")
+        sys.stdout.write("PASSED RSETEX test\n")
         num_of_passed_tests +=1
 
     total_time_ms = current_time_ms() - start_time
     sys.stdout.write("-------------")
     if (num_of_FAILED_tests):
-        sys.stdout.write("FAILED ({} tests FAILED and {}} passed in {}} sec)".format(num_of_FAILED_tests,num_of_passed_tests, total_time_ms / 1000))
+        sys.stdout.write("FAILED ({} tests FAILED and {} passed in {} sec)\n".format(num_of_FAILED_tests,num_of_passed_tests, total_time_ms / 1000))
         return False
     else:
-        sys.stdout.write("OK ({} tests passed in {} sec)".format(num_of_passed_tests, total_time_ms / 1000))
+        sys.stdout.write("OK ({} tests passed in {} sec)\n".format(num_of_passed_tests, total_time_ms / 1000))
         return True
 
 def load_test_rtexp(redis_service, cycles=1000000, timeouts=[1,2,4,16,32,100,200,1000]):
@@ -154,20 +151,20 @@ def load_test_rtexp(redis_service, cycles=1000000, timeouts=[1,2,4,16,32,100,200
     start = time.time()
     # test push
     for i in range(cycles):
-        redis_service.execute_command("rtexp.push", "python_load_test_rtexp", random.choice(timeouts)*1000, "payload", "%d" % i)
+        redis_service.execute_command("push", "python_load_test_rtexp", random.choice(timeouts)*1000, "payload", "%d" % i)
     push_end = time.time()
 
 
     print "measuring GIDPUSH (auto generating ids)"
     # test push
     for i in range(cycles):
-        redis_service.execute_command("rtexp.gidpush", "python_load_test_rtexp", random.choice(timeouts)*1000, "payload")
+        redis_service.execute_command("gidpush", "python_load_test_rtexp", random.choice(timeouts)*1000, "payload")
     gid_push_end = time.time()
 
 
     print "measuring PULL"
     for i in range(cycles):
-        redis_service.execute_command("rtexp.pull", "python_load_test_rtexp", "%d" % i)
+        redis_service.execute_command("pull", "python_load_test_rtexp", "%d" % i)
     pull_end = time.time()
 
     print "preparing POLL"
@@ -175,7 +172,7 @@ def load_test_rtexp(redis_service, cycles=1000000, timeouts=[1,2,4,16,32,100,200
     end_i = cycles/3
     for j in range(3):
         for i in range(start_i,end_i):
-            redis_service.execute_command("rtexp.push", "python_load_test_rtexp", "%d" % i, "payload", 1000*(3-j+random.choice([1,2,3])))
+            redis_service.execute_command("push", "python_load_test_rtexp", "%d" % i, "payload", 1000*(3-j+random.choice([1,2,3])))
         start_i += cycles/3
         end_i += cycles/3
         time.sleep(1)
@@ -185,7 +182,7 @@ def load_test_rtexp(redis_service, cycles=1000000, timeouts=[1,2,4,16,32,100,200
     for j in range(10):
         time.sleep(1)
         poll_start = time.time()
-        redis_service.execute_command("rtexp.poll", "python_load_test_rtexp")
+        redis_service.execute_command("poll", "python_load_test_rtexp")
         poll_end = time.time()
         poll_sum += poll_end-poll_start
 
