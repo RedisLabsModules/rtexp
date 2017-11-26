@@ -30,11 +30,8 @@ export CFLAGS
 # Sources
 SOURCEDIR=$(shell pwd -P)
 CC_SOURCES = $(wildcard $(SOURCEDIR)/*.c)
-# CC_SOURCES += $(wildcard $(SOURCEDIR)/query_parser/*.c)
-# CC_SOURCES += $(wildcard $(SOURCEDIR)/ext/*.c)
 CC_SOURCES += $(wildcard $(SOURCEDIR)/util/*.c)
 CC_SOURCES += $(wildcard $(SOURCEDIR)/trie/*.c)
-# CC_SOURCES += $(wildcard $(SOURCEDIR)/dep/thpool/*.c)
 
 # Convert all sources to .o files
 CC_OBJECTS = $(patsubst %.c, %.o, $(CC_SOURCES) )
@@ -45,11 +42,7 @@ CC_DEPS = $(patsubst %.c, %.d, $(CC_SOURCES) )
 
 # Library dependencies
 LIBRMUTIL=rmutil/librmutil.a
-# LIBTRIE=trie/libtrie.a
-# LIBTRIEMAP=dep/triemap/libtriemap.a
 LIBTRIEMAP=trie/libtriemap.a
-# LIBNU=dep/libnu/libnu.a
-# LIBSTEMMER=dep/snowball/libstemmer.o
 
 # Compilation deps for the module
 LIBS=$(LIBRMUTIL) $(LIBTRIEMAP) #$(LIBTRIE) $(LIBNU) $(LIBSTEMMER)
@@ -75,7 +68,7 @@ $(LIBTRIE):
 	$(MAKE) -C trie
 .PHONY: $(LIBTRIE)
 $(LIBTRIEMAP):
-	$(MAKE) -C trie #/triemap.o
+	$(MAKE) -C trie 
 .PHONY: $(LIBTRIEMAP)
 $(LIBSTEMMER):
 	$(MAKE) -C dep/snowball libstemmer.o
@@ -84,14 +77,8 @@ $(LIBNU):
 	$(MAKE) -C dep/libnu
 .PHONY: $(LIBNU)
 
-# Compile query parse .y and .rl files.
-# This is not included in the usual make target!
-# query_parser:
-	# $(MAKE) -C $@
-# .PHONY: query_parser
 
-build_tests: rtexp.so rtexp_module.so #librtexp.so
-	# $(MAKE)  libtest.c -o test #build
+build_tests: rtexp.so rtexp_module.so 
 	$(MAKE) -C tests build
 
 test: $(MODULE) build_tests
@@ -100,10 +87,8 @@ test: $(MODULE) build_tests
 	$(MAKE) -C ./tests test
 	# high level python integration tests
 	# $(MAKE) -C pytest test
-	# Triemap tests
-	# $(MAKE) -C trie/test test
 
-buildall:  rtexp.so rtexp_module.so build_tests #librtexp.so
+buildall:  rtexp.so rtexp_module.so build_tests
 
 # Build the module...
 rtexp_module.so: $(MODULE) version.h
