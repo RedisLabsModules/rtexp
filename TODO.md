@@ -1,18 +1,22 @@
 # TBD
-- [X] write lib tests
-- [X] add -DREDIS_MODULE_TARGET for that redis module
-- [X] use key, key_len pairs everywhere
+
+- [ ] notification mechanism (note whenever somthing is expired)
 - [ ] fix random crash issue with heap.c
+- [ ] write documentation for lib
+- [ ] write documentation for redis module
+- [ ] clean Makefiles
 - [ ] bind lib to redis module commands
+    - [ ] REXECEX
     - [X] REXPIRE
     - [X] REXPIREAT
     - [X] RTTL
     - [X] RUNEXPIRE
     - [X] RSETEX
-    - [ ] REXECEX
     - [X] Make sure to bind commands correctly in terms of read/write
 - [X] expire using UNLINK
-- [ ] notification mechanism (note whenever somthing is expired)
+- [X] write lib tests
+- [X] add -DREDIS_MODULE_TARGET for that redis module
+- [X] use key, key_len pairs everywhere
 - [X] auto expiration
     - [X] maybe sleep until closest and interrupt on any expiration update
     - [X] add background task to poll Store
@@ -20,9 +24,6 @@
     - [X] Check for existance of key before setting expiration (to resemble redis main)
     - [X] redisSetWithExpiration (using PEXPIRE)
 - [X] write module tests
-- [ ] write documentation for lib
-- [ ] write documentation for redis module
-- [ ] clean Makefiles
 
 # deferred tasks -  these may no be needed, time will tell
 - [ ] add rtexp as redis type
