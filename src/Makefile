@@ -62,7 +62,7 @@ MODULE=$(CC_OBJECTS) $(LIBS)
 %.o: %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(TARGET_ARCH) -c $< -o $@ -MMD -MF $(@:.o=.d)
 
-all: rtexp.so
+all: rtexp.so rtexp_module.so
 
 # Include all dependency files for C files
 -include $(CC_DEPS)
@@ -103,11 +103,17 @@ test: $(MODULE) build_tests
 	# Triemap tests
 	# $(MAKE) -C trie/test test
 
-buildall:  rtexp.so build_tests #librtexp.so
+buildall:  rtexp.so rtexp_module.so build_tests #librtexp.so
 
 # Build the module...
-rtexp.so: $(MODULE) version.h
+rtexp_module.so: $(MODULE) version.h
 	# Just to make sure old versions of the modules are deleted
+	rm -f rtexp_module.so
+	$(LD) -o $@ $(MODULE) $(SHOBJ_LDFLAGS) -lc -lm 
+
+# Build the lib...
+rtexp.so: $(MODULE)
+	# Just to make sure old versions of the lib are deleted
 	rm -f rtexp.so
 	$(LD) -o $@ $(MODULE) $(SHOBJ_LDFLAGS) -lc -lm 
 

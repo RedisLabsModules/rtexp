@@ -1,6 +1,6 @@
 # TBD
 - [X] write lib tests
-- [ ] add -DREDIS_MODULE_TARGET for that redis module - TEST ME!
+- [X] add -DREDIS_MODULE_TARGET for that redis module
 - [X] use key, key_len pairs everywhere
 - [ ] bind lib to redis module commands
     - [X] REXPIRE
@@ -9,16 +9,16 @@
     - [X] RUNEXPIRE
     - [X] RSETEX
     - [ ] REXECEX
-    - [ ] Make sure to bind commands correctly in terms of read/write  - TEST ME!
+    - [X] Make sure to bind commands correctly in terms of read/write
 - [X] expire using UNLINK
-- [ ] add notification mechanism (note whenever somthing is expired)
-- [ ] Add auto expiration
+- [ ] notification mechanism (note whenever somthing is expired)
+- [ ] auto expiration
     - [ ] maybe sleep until closest and interrupt on any expiration update - TEST ME!
     - [ ] add background task to poll Store - TEST ME!
-- [ ] add some decent seatbelts:
-    - [X] redisSetWithExpiration
-    - [ ] add some cleanup on module termination
-- [ ] write module tests
+- [X] add some decent seatbelts:
+    - [X] Check for existance of key before setting expiration (to resemble redis main)
+    - [X] redisSetWithExpiration (using PEXPIRE)
+- [ ] write module tests - TEST ME!
 - [ ] write documentation for lib
 - [ ] write documentation for redis module
 - [ ] clean Makefiles
@@ -30,3 +30,5 @@
     - [ ] define a global with the store key
     - [ ] on rdb load look at the global and use it as key
     - [ ] if on rdb load we already have an open key MERGE stores
+- [ ] add some cleanup on module termination
+- [ ] RTTL {key1} {key2} ...

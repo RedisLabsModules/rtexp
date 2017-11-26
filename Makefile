@@ -1,5 +1,6 @@
 all:
 	$(MAKE) -C ./src all
+	cp ./src/rtexp_module.so .
 
 test:
 	$(MAKE) -C ./src $@
@@ -37,3 +38,5 @@ print_version:
 # 	docker push redislabs/redisearch:latest
 # 	docker tag redislabs/redisearch:latest redislabs/redisearch:`./src/print_version`
 # 	docker push redislabs/redisearch:`./src/print_version`
+
+rebuild: clean all
