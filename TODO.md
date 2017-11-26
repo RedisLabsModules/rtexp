@@ -2,6 +2,7 @@
 - [X] write lib tests
 - [X] add -DREDIS_MODULE_TARGET for that redis module
 - [X] use key, key_len pairs everywhere
+- [ ] fix random crash issue with heap.c
 - [ ] bind lib to redis module commands
     - [X] REXPIRE
     - [X] REXPIREAT
@@ -12,13 +13,13 @@
     - [X] Make sure to bind commands correctly in terms of read/write
 - [X] expire using UNLINK
 - [ ] notification mechanism (note whenever somthing is expired)
-- [ ] auto expiration
-    - [ ] maybe sleep until closest and interrupt on any expiration update - TEST ME!
-    - [ ] add background task to poll Store - TEST ME!
+- [X] auto expiration
+    - [X] maybe sleep until closest and interrupt on any expiration update
+    - [X] add background task to poll Store
 - [X] add some decent seatbelts:
     - [X] Check for existance of key before setting expiration (to resemble redis main)
     - [X] redisSetWithExpiration (using PEXPIRE)
-- [ ] write module tests - TEST ME!
+- [X] write module tests
 - [ ] write documentation for lib
 - [ ] write documentation for redis module
 - [ ] clean Makefiles

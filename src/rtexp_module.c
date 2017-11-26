@@ -9,7 +9,7 @@
 #include "util/rmalloc.h"
 
 #define RTEXP_BUFFER_MS 5
-#define RTEXP_MIN_INTERVAL_NS 1000 // = microsecond (10^-6) scale. existing Expire is on milliseconds (10^-3) scale
+#define RTEXP_MIN_INTERVAL_NS 250 // =0.25 microsecond (10^-6) scale. existing Expire is on milliseconds (10^-3) scale
 #define RTEXP_MAX_INTERVAL_NS 10000000 // = 10 millisecond (0.01 second) scale
 
 static RTXStore *rtxStore;
@@ -51,23 +51,25 @@ void setNextTimerInterval(mstime_t interval_ms){
 }
 
 void timerCb(RedisModuleCtx *ctx, void *p) {
+  if (expiration_count(rtxStore) <= 0)
+    setNextTimerInterval(RTEXP_MAX_INTERVAL_NS);
+    return;
 
-  // RedisModule_ThreadSafeContextLock(ctx);
 
-  // RTXStore *store = p;
-  // mstime_t now = rm_current_time_ms();
-  // nstime_t now_ns = to_ns(now);
+  RedisModule_ThreadSafeContextLock(ctx);
+  mstime_t now = rm_current_time_ms();
+  nstime_t now_ns = to_ns(now);
 
-  // mstime_t next = next_at(store);
-  // while (to_ns(next) < (now_ns+RTEXP_MIN_INTERVAL_NS)) {
-  //   char *expired_key = pop_next(store);
-  //   RedisModule_Call(ctx, "UNLINK", "c", expired_key);
-  //   rm_free(expired_key);
-  //   next = next_at(store);
-  // }
+  mstime_t next = next_at(rtxStore);
+  while (to_ns(next) < (now_ns+RTEXP_MIN_INTERVAL_NS)) {
+    char *expired_key = pop_next(rtxStore);
+    RedisModule_Call(ctx, "UNLINK", "c", expired_key);
+    rm_free(expired_key);
+    next = next_at(rtxStore);
+  }
   
-  // setNextTimerInterval(next);
-  // RedisModule_ThreadSafeContextUnlock(ctx);
+  setNextTimerInterval(next);
+  RedisModule_ThreadSafeContextUnlock(ctx);
 }
 
 /********************
@@ -75,6 +77,7 @@ void timerCb(RedisModuleCtx *ctx, void *p) {
  ********************/
 
 int set_ttl(RTXStore *store, char *element_key, size_t len, mstime_t ttl_ms) {
+  setNextTimerInterval(ttl_ms);
   return set_element_exp(store, element_key, len, ttl_ms);
 }
 

@@ -4,7 +4,10 @@ import time
 import random
 import sys
 
+MS_COMPARISON_ACCURACY = 2
 
+def compare_ms(a, b):
+    return (abs(a-b) <= MS_COMPARISON_ACCURACY)
 
 def current_time_ms():
     millis = int(round(time.time() * 1000))
@@ -15,11 +18,17 @@ def current_time_ms():
 def test_REXPIRE_RTTL(redis_service):
     retval = False
     ttl_ms = 10000
-    expected = current_time_ms() + ttl_ms
+    start_ts = current_time_ms()
+    div = random.randint(0,ttl_ms/2)
+    
     key = "set_get_test_key"
+    redis_service.execute_command("SET", key, 1)
     redis_service.execute_command("REXPIRE", key, ttl_ms)
+    time.sleep(div/1000.0)
+    sleep_time = current_time_ms() - start_ts
+    expected = ttl_ms - sleep_time
     saved_ms = redis_service.execute_command("RTTL", key)
-    if (saved_ms != expected):
+    if (not compare_ms(saved_ms,expected)):
         sys.stdout.write("ERROR: expected {} but found {}\n".format(expected, saved_ms))
         retval = False
     else:
@@ -32,12 +41,18 @@ def test_REXPIRE_RTTL(redis_service):
 # 3. RTTL {key}
 def test_REXPIREAT_RTTL(redis_service):
     retval = False
-    timestamp_ms = current_time_ms() + 10000
-    expected = timestamp_ms
+    ttl_ms = 10000
+    start_ts = current_time_ms()
+    timestamp_ms = current_time_ms() + ttl_ms
+    div = random.randint(0,ttl_ms/2)
     key = "set_at_test_key"
+    redis_service.execute_command("SET", key, 1)
     redis_service.execute_command("REXPIREAT", key, timestamp_ms)
+    time.sleep(div/1000.0)
+    sleep_time = current_time_ms() - start_ts
+    expected = ttl_ms - sleep_time
     saved_ms = redis_service.execute_command("RTTL", key)
-    if (saved_ms != expected):
+    if (not compare_ms(saved_ms,expected)):
         sys.stdout.write("ERROR: expected {} but found {}\n".format(expected, saved_ms))
         retval = False
     else:
@@ -50,14 +65,17 @@ def test_REXPIREAT_RTTL(redis_service):
 def test_RUNEXPIRE(redis_service):
     retval = False
     ttl_ms = 10000
-    expected = -1
+    div = random.randint(0,ttl_ms/4)
+    expected = -2
     key = "del_exp_test_key"
+    redis_service.execute_command("SET", key, 1)
     redis_service.execute_command("REXPIRE", key, ttl_ms)
     redis_service.execute_command("RUNEXPIRE", key)
+    time.sleep(div/1000.0)
     saved_ms = redis_service.execute_command("RTTL", key)
-    if (saved_ms != expected):
+    if (not compare_ms(saved_ms,expected)):
         sys.stdout.write("ERROR: expected {} but found {}\n".format(expected, saved_ms))
-        retval = False
+        rcompare_msetval = False
     else:
         retval = True
 
@@ -67,14 +85,16 @@ def test_RUNEXPIRE(redis_service):
 # 5. RSETEX {key} {value} {ttl}
 def test_RSETEX(redis_service):
     retval = False
+    start_ts = current_time_ms()
     ttl_ms = 10000
     value = "test_value"
-    expected_ms = current_time_ms() + ttl_ms
-    key = "set_get_test_key"
+    expected_ms = ttl_ms
+    key = "set_get_tescurrent_time_ms() + t_key"
+    redis_service.execute_command("SET", key, 1)
     redis_service.execute_command("RSETEX", key, value, ttl_ms)
     saved_ms = redis_service.execute_command("RTTL", key)
     saved_value = redis_service.execute_command("RSETEX", key, value, ttl_ms)
-    if (saved_ms != expected_ms):
+    if (not compare_ms(saved_ms, expected_ms)):
         sys.stdout.write("ERROR: expected {} but found {}\n".format(expected_ms, saved_ms))
         retval = False
     elif not saved_value:
@@ -102,38 +122,40 @@ def function_test_rtexp(redis_service):
     num_of_FAILED_tests = 0
     num_of_passed_tests = 0
 
+    sys.stdout.write("testing REXPIRE_RTTL: ")
     if (test_REXPIRE_RTTL(redis_service) == False):
         num_of_FAILED_tests += 1
-        sys.stdout.write("FAILED on REXPIRE_RTTL\n")
+        sys.stdout.write("FAILED\n")
     else:
-        sys.stdout.write("PASSED REXPIRE_RTTL test\n")
+        sys.stdout.write("PASSED\n")
         num_of_passed_tests += 1
 
+    sys.stdout.write("\ntesting REXPIREAT_RTTL: ")
     if (test_REXPIREAT_RTTL(redis_service) == False):
         num_of_FAILED_tests +=1
-        sys.stdout.write("FAILED on REXPIREAT_RTTL\n")
+        sys.stdout.write("FAILED\n")
     else:
-        sys.stdout.write("PASSED REXPIREAT_RTTL test\n")
+        sys.stdout.write("PASSED\n")
         num_of_passed_tests +=1
   
-
+    sys.stdout.write("\ntesting RUNEXPIRE: ")
     if (test_RUNEXPIRE(redis_service) == False):
         num_of_FAILED_tests +=1
-        sys.stdout.write("FAILED on RUNEXPIRE\n")
+        sys.stdout.write("FAILED\n")
     else:
-        sys.stdout.write("PASSED RUNEXPIRE test\n")
+        sys.stdout.write("PASSED\n")
         num_of_passed_tests +=1
 
-
+    sys.stdout.write("\ntesting RSETEX: ")
     if (test_RSETEX(redis_service) == False):
         num_of_FAILED_tests +=1
-        sys.stdout.write("FAILED on RSETEX\n")
+        sys.stdout.write("FAILED\n")
     else:
-        sys.stdout.write("PASSED RSETEX test\n")
+        sys.stdout.write("PASSED\n")
         num_of_passed_tests +=1
 
     total_time_ms = current_time_ms() - start_time
-    sys.stdout.write("-------------")
+    sys.stdout.write("-------------\n")
     if (num_of_FAILED_tests):
         sys.stdout.write("FAILED ({} tests FAILED and {} passed in {} sec)\n".format(num_of_FAILED_tests,num_of_passed_tests, total_time_ms / 1000))
         return False
@@ -193,17 +215,19 @@ def load_test_rtexp(redis_service, cycles=1000000, timeouts=[1,2,4,16,32,100,200
     redis_service.execute_command("DEL", "python_load_test_rtexp")
 
 if __name__ == "__main__":
-    r = redis.StrictRedis(host='localhost', port=6379, db=0)
     args = sys.argv[1:]
     test_internal = False
-    test_external = False
+    test_external = True
     load_test = False
+    port = 6379
     if not args:
         test_internal = False # TODO: True
         test_external = True
         load_test = False # TODO: True
     else:
-        for arg in args:
+        for i, arg in enumerate(args):
+            if arg == "--port":
+                port = args[i+1]
             if arg == "--load":
                 load_test = True
             if arg == "--noload":
@@ -215,6 +239,8 @@ if __name__ == "__main__":
             elif arg == "--external":
                 test_external = True
 
+    print "port", port
+    r = redis.StrictRedis(host='localhost', port=port, db=0)    
     if test_internal:
         run_internal_test(r)
     if test_external:
