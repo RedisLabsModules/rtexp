@@ -13,7 +13,7 @@ RTExp is a real time key expiration module for Redis, developed by [Tamar Labs](
 
     <!-- i386 CPUs should work fine for small data-sets, but are not tested and not recommended. Atom CPUs are not supported currently.  -->
 
-## Overview
+## Commands
 The API follows the Redis expiration API, denoting Real-Time with R as the prefix.
 This module includes the following commands:
 1. REXPIRE {key} {ttl_ms}
