@@ -3,8 +3,7 @@
 - [ ] notification mechanism (note whenever somthing is expired)
 - [ ] fix random crash issue with heap.c
 - [ ] write documentation for lib
-- [ ] write documentation for redis module
-- [ ] clean Makefiles
+- [ ] write documentation for redis module - ELABORATE
 - [ ] bind lib to redis module commands
     - [ ] REXECEX
     - [X] REXPIRE
@@ -13,6 +12,7 @@
     - [X] RUNEXPIRE
     - [X] RSETEX
     - [X] Make sure to bind commands correctly in terms of read/write
+- [X] clean Makefiles
 - [X] expire using UNLINK
 - [X] write lib tests
 - [X] add -DREDIS_MODULE_TARGET for that redis module
