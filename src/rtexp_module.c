@@ -51,24 +51,24 @@ void setNextTimerInterval(mstime_t interval_ms){
 }
 
 void timerCb(RedisModuleCtx *ctx, void *p) {
-  if (expiration_count(rtxStore) <= 0) {
-    setNextTimerInterval(RTEXP_MAX_INTERVAL_NS);
-    return;
-  }
-
   RedisModule_ThreadSafeContextLock(ctx);
+
   mstime_t now = rm_current_time_ms();
   nstime_t now_ns = to_ns(now);
 
   mstime_t next = next_at(rtxStore);
-  while (to_ns(next) < (now_ns+RTEXP_MIN_INTERVAL_NS)) {
-    char *expired_key = pop_next(rtxStore);
-    RedisModule_Call(ctx, "UNLINK", "c", expired_key);
-    rm_free(expired_key);
+  while (next > 0 && to_ns(next) < (now_ns+RTEXP_MIN_INTERVAL_NS)) {
+    RTXElementNode* node = pop_next(rtxStore);    
+    if (node != NULL) {
+      RedisModule_Call(ctx, "UNLINK", "c", node->key);
+      freeRTXElementNode(node);
+    }
     next = next_at(rtxStore);
   }
-  
-  setNextTimerInterval(next);
+  if (next < 0)
+    setNextTimerInterval(RTEXP_MAX_INTERVAL_NS);
+  else
+    setNextTimerInterval(next);
   RedisModule_ThreadSafeContextUnlock(ctx);
 }
 

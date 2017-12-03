@@ -168,16 +168,13 @@ mstime_t next_at(RTXStore* store) {
 
 /*
  * Remove the element with the closest expiration datetime from the data store and return it's key
- * @return the key of the element with closest expiration datetime
+ * @return the node of the element with closest expiration datetime
  */
-char* pop_next(RTXStore* store) {
+RTXElementNode* pop_next(RTXStore* store) {
   RTXElementNode* node = _peek_next(store);
   if (node != NULL) {  // a non empty DS
     node = heap_poll(store->sorted_keys);
-    char* key = rm_strdup(node->key);
-    del_element_exp(store, node->key);
-    freeRTXElementNode(node);
-    return key;
+    return node;
   }
   return NULL;
 }
