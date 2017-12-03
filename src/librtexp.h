@@ -24,7 +24,7 @@ typedef struct rtxs_node {
 } RTXElementNode;
 
 typedef struct rtxs_store {
-  heap_t* sorted_keys;        // [exp] -> <key, exp_version, timestamp>
+  heap_t* sorted_keys;        // <key, exp_version, timestamp> (sorted by [exp_timestamp])
   TrieMap* element_node_map;  // [key] -> <exp_version, exp_timestamp>
 } RTXStore;
 

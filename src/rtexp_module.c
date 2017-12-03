@@ -160,15 +160,15 @@ int ExpireAtCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   }
 
   if (redisSetPExpiration(ctx, argv[1], ttl_ms) == REDISMODULE_ERR){
-    RedisModule_ReplyWithLongLong(ctx, 0);
+    RedisModule_ReplyWithLongLong(ctx, 1);
     return REDISMODULE_ERR;
   }
 
   if (set_ttl(rtxStore, element_key, element_key_len, ttl_ms) == REDISMODULE_OK) {
-    RedisModule_ReplyWithLongLong(ctx, 1);
+    RedisModule_ReplyWithLongLong(ctx, 0);
     return REDISMODULE_OK;
   } else {
-    RedisModule_ReplyWithError(ctx, "Unexpeted Error Occured");
+    RedisModule_ReplyWithLongLong(ctx, 1);
     return REDISMODULE_ERR;
   }
 }
@@ -208,12 +208,12 @@ int UnexpireCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   const char * element_key = RedisModule_StringPtrLen(argv[1], &element_key_len);
 
   if (redisSetPExpiration(ctx, argv[1], NULL) == REDISMODULE_ERR){
-    RedisModule_ReplyWithLongLong(ctx, 0);
+    RedisModule_ReplyWithLongLong(ctx, 1);
     return REDISMODULE_ERR;
   }
 
   remove_expiration(rtxStore, element_key);
-  RedisModule_ReplyWithLongLong(ctx, 1);
+  RedisModule_ReplyWithLongLong(ctx, 0);
   return REDISMODULE_OK;
 }
 
@@ -248,12 +248,12 @@ int SetexCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   RedisModule_CloseKey(key);
   
   if (redisSetPExpiration(ctx, argv[1], ttl_ms) == REDISMODULE_ERR){
-    RedisModule_ReplyWithLongLong(ctx, 0);
+    RedisModule_ReplyWithLongLong(ctx, 1);
     return REDISMODULE_ERR;
   }
 
   if (set_ttl(rtxStore, element_key, element_key_len, ttl_ms) == REDISMODULE_OK) {
-    RedisModule_ReplyWithLongLong(ctx, 1);
+    RedisModule_ReplyWithLongLong(ctx, 0);
     return REDISMODULE_OK;
   } else {
     RedisModule_ReplyWithError(ctx, "Unexpeted Error Occured");
