@@ -1,11 +1,14 @@
 # TBD
 
-- [ ] notification mechanism (note whenever somthing is expired)
-- [ ] fix random crash issue with heap.c
-- [ ] write documentation for lib
-- [ ] write documentation for redis module - ELABORATE
-- [ ] bind lib to redis module commands
-    - [ ] REXECEX
+- [ ] load test
+- [X] fix random crash issue with heap.c
+- [X] write documentation for lib
+- [X] write documentation for redis module
+    - [X] Command documentation
+    - [X] Design overview
+    - [X] module overview and quickstart
+- [X] bind lib to redis module commands
+    - [X] REXECEX
     - [X] REXPIRE
     - [X] REXPIREAT
     - [X] RTTL
@@ -26,6 +29,7 @@
 - [X] write module tests
 
 # deferred tasks -  these may no be needed, time will tell
+- [ ] notification mechanism (note whenever somthing is expired)
 - [ ] add rtexp as redis type
 - [ ] add DEL function to store
 - [ ] random store key

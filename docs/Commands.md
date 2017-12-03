@@ -137,3 +137,36 @@ Worst: O(log n)
 0 & OK on success, 1 & error otherwise.
 
 
+## REXECEX 
+
+
+### Format
+
+```
+REXECEX {command name} {key} {ttl_ms} {commnad params} 
+```
+
+### Description
+
+Run `command` with params `command params` for key `key` and mark for `key` for realtime auto-expiration in `ttl_ms` milliseconds from now. 
+The following command will be invoked prior to setting the expiration:
+```
+<command> <key> <command params>
+```
+
+### Parameters:
+
+* **command name**: The command name to run for `key`. 
+* **key**: The key to set expiration for.
+* **ttl_ms**: The number of milliseconds to wait before expiring the given key.
+* **command params**: The Parameters for the command `command`. 
+
+### Complexity
+
+Avarge: O(1) + runtime complexity of `command`
+Worst: O(log n) + runtime complexity of `command`
+
+### Returns
+
+`command` response on success, error otherwise.
+In case of failiure to set expiration error will be returned even if `command` was successful.

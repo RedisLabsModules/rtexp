@@ -100,8 +100,7 @@ mstime_t get_ttl(RTXStore *store, char *element_key) {
 
 // 1. REXPIRE {key} {ttl_ms}
 int ExpireCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
-  if (argc != 3)
-    RedisModule_WrongArity(ctx);
+  if (argc != 3) RedisModule_WrongArity(ctx);
 
   if (!rtxStore) {
     RedisModule_ReplyWithError(ctx, "Store was not initialized");
@@ -119,7 +118,7 @@ int ExpireCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   }
 
   if (redisSetPExpiration(ctx, argv[1], ttl_ms) == REDISMODULE_ERR){
-    RedisModule_ReplyWithLongLong(ctx, 0);
+    RedisModule_ReplyWithLongLong(ctx, 1);
     return REDISMODULE_ERR;
   }
 
@@ -135,8 +134,7 @@ int ExpireCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
 
 // 2. REXPIREAT {key} {timestamp_ms}
 int ExpireAtCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
-  if (argc != 3)
-    RedisModule_WrongArity(ctx);
+  if (argc != 3) RedisModule_WrongArity(ctx);
 
   if (!rtxStore) {
     RedisModule_ReplyWithError(ctx, "Store was not initialized");
@@ -175,8 +173,7 @@ int ExpireAtCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
 
 // 3. RTTL {key}
 int TTLCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
-  if (argc != 2)
-    RedisModule_WrongArity(ctx);
+  if (argc != 2) RedisModule_WrongArity(ctx);
   
   if (!rtxStore) {
     RedisModule_ReplyWithError(ctx, "Store was not initialized");
@@ -196,8 +193,7 @@ int TTLCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
 
 // 4. RUNEXPIRE {key}
 int UnexpireCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
-  if (argc != 2)
-    RedisModule_WrongArity(ctx);
+  if (argc != 2) RedisModule_WrongArity(ctx);
   
   if (!rtxStore) {
     RedisModule_ReplyWithError(ctx, "Store was not initialized");
@@ -219,8 +215,7 @@ int UnexpireCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
 
 // 5. RSETEX {key} {value} {ttl}
 int SetexCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
-  if (argc != 4)
-    RedisModule_WrongArity(ctx);
+  if (argc != 4) RedisModule_WrongArity(ctx);
   
   if (!rtxStore) {
     RedisModule_ReplyWithError(ctx, "Store was not initialized");
@@ -261,25 +256,56 @@ int SetexCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   }
 }
 
-// 6. REXECEX {key} {ttl} {....} - execute command, save result to key, and set expiration
+// 6. REXECEX {command} {key} {ttl} {....} - execute command, save result to key, and set expiration
 int ExecuteAndExpireCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   if (argc < 4) RedisModule_WrongArity(ctx);
-  //
-  // RedisModuleString *rtxstore_name = argv[1];
-  // RedisModuleString *element_key_str = argv[2];
-  // RedisModuleString *ttl_ms_str = argv[3];
-  //
-  // RedisModuleString *cmdname_str = argv[4];
-  // size_t cmdname_len;
-  // const char *cmdname = RedisModule_StringPtrLen(cmdname_str, &cmdname_len);
-  //
-  // RedisModuleCallReply *call_reply = RedisModule_Call(
-  //     ctx, cmdname, const char *fmt,
-  //     ...);  // TODO: how do I handle all these defferent formats for different commands here?
-  // RedisModuleString *value = RedisModule_CreateStringFromCallReply();
-  // RedisModuleString **outv = [ rtxstore_name, element_key_str, value, ttl_ms_str ];
-  // return SetexCommand(ctx, outv, 4);
-  return REDISMODULE_OK;
+  
+  if (!rtxStore) {
+    RedisModule_ReplyWithError(ctx, "Store was not initialized");
+    return REDISMODULE_ERR;
+  }
+
+  RedisModuleString *cmdname_str = argv[1];
+  RedisModuleString *element_key_str = argv[2];
+  RedisModuleString *ttl_ms_str = argv[3];
+
+
+  mstime_t ttl_ms;
+  if (RedisModule_StringToLongLong(ttl_ms_str, &ttl_ms) == REDISMODULE_ERR) {
+    RedisModule_ReplyWithError(ctx, "Timestamp must be parsable to type Long Long");
+    return REDISMODULE_ERR;
+  }
+
+  size_t cmdname_len;
+  const char *cmdname = RedisModule_StringPtrLen(cmdname_str, &cmdname_len);
+  
+  RedisModuleCallReply *call_reply;
+  if (argc > 4)
+    call_reply = RedisModule_Call(ctx, cmdname, "sv", argv[2], &argv[4], argc - 4); 
+  else
+    call_reply = RedisModule_Call(ctx, cmdname, "s", argv[2]); 
+  
+  if (call_reply == NULL) {
+    RedisModule_ReplyWithCallReply(ctx, call_reply);
+    return REDISMODULE_ERR;
+  }
+  
+  size_t element_key_len;
+  const char * element_key = RedisModule_StringPtrLen(element_key_str, &element_key_len);
+
+  if (redisSetPExpiration(ctx, element_key_str, ttl_ms) == REDISMODULE_ERR){
+    RedisModule_ReplyWithLongLong(ctx, 1);
+    return REDISMODULE_ERR;
+  }
+
+  // THE ACTUAL EXPIRATION 
+  if (set_ttl(rtxStore, element_key, element_key_len, ttl_ms) == REDISMODULE_OK) {
+    RedisModule_ReplyWithCallReply(ctx, call_reply);
+    return REDISMODULE_OK;
+  } else {
+    RedisModule_ReplyWithLongLong(ctx, 1);
+    return REDISMODULE_ERR;
+  }
 }
 
 int CreateRTEXP() {
