@@ -76,9 +76,9 @@ RTXElementNode* pop_next(RTXStore* store);
 /*
  * Wait Remove the element with the closest expiration datetime from the data store and return it's
  * key
- * @return the key of the element with closest expiration datetime
+ * @return the node of the element with closest expiration datetime
  */
-char* pop_wait(RTXStore* store);
+RTXElementNode* pop_wait(RTXStore* store);
 
 /*
  * Gracefully free nodes

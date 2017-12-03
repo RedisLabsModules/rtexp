@@ -149,8 +149,7 @@ mstime_t get_element_exp(RTXStore* store, char* key) {
  * @return RTXS_OK
  */
 int del_element_exp(RTXStore* store, char* key) {
-  TrieMap* t = store->element_node_map;
-  TrieMap_Delete(t, key, strlen(key), NULL);
+  TrieMap_Delete(store->element_node_map, key, strlen(key), NULL);
   return RTXS_OK;
 }
 
@@ -166,6 +165,8 @@ mstime_t next_at(RTXStore* store) {
   }
 }
 
+void _voidCB(void *elem) { return; }
+
 /*
  * Remove the element with the closest expiration datetime from the data store and return it's key
  * @return the node of the element with closest expiration datetime
@@ -174,6 +175,7 @@ RTXElementNode* pop_next(RTXStore* store) {
   RTXElementNode* node = _peek_next(store);
   if (node != NULL) {  // a non empty DS
     node = heap_poll(store->sorted_keys);
+    TrieMap_Delete(store->element_node_map, node->key, strlen(node->key), _voidCB);
     return node;
   }
   return NULL;
@@ -184,7 +186,7 @@ RTXElementNode* pop_next(RTXStore* store) {
  * key
  * @return the key of the element with closest expiration datetime
  */
-char* pop_wait(RTXStore* store) {
+RTXElementNode* pop_wait(RTXStore* store) {
   mstime_t sleep_target_ms = next_at(store);
   mstime_t time_to_wait = sleep_target_ms - current_time_ms();
   if (time_to_wait > 0) {

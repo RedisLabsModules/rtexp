@@ -149,21 +149,22 @@ int test_pop_next() {
       (set_element_exp(store, key3, strlen(key3), ttl_ms3) != RTXS_ERR)) {
 
     char* expected = key3;
-    char* actual = pop_next(store);
+    RTXElementNode* actual_node = pop_next(store);
+    char* actual = actual_node->key; 
     if (strcmp(expected, actual)) {
-      printf("ERROR: expected \'%s\' but found \'%s\'\n", expected, actual);
+      printf("ERROR: expected key \'%s\' but found \'%s\'\n", expected, actual);
       retval = FAIL;
     } else {
       // make sure we actually delete the thing
       mstime_t expected_ms = -1;
       mstime_t saved_ms = get_element_exp(store, expected);
       if (expected_ms != saved_ms) {
-        printf("ERROR: expected %llu but found %llu\n", expected_ms, saved_ms);
+        printf("ERROR: expected ttl %llu but found %llu\n", expected_ms, saved_ms);
         retval = FAIL;
       } else
         retval = SUCCESS;
     }
-    free(actual);
+    freeRTXElementNode(actual_node);
   }
   RTXStore_Free(store);
   return retval;
@@ -196,7 +197,8 @@ int test_pop_wait() {
     mstime_t expected_ms = ttl_ms3;
     char* expected_key = key3;
     mstime_t start_time = current_time_ms();
-    char* pulled_key = pop_wait(store);
+    RTXElementNode* actual_node = pop_wait(store);
+    char* pulled_key = actual_node->key;
     mstime_t actual_ms = current_time_ms() - start_time;
     if (expected_ms == actual_ms) {
       printf("ERROR: expected %llu but found %llu\n", expected_ms, actual_ms);
@@ -211,7 +213,7 @@ int test_pop_wait() {
       } else
         retval = SUCCESS;
     }
-    free(pulled_key);
+    freeRTXElementNode(actual_node);
   }
   RTXStore_Free(store);
   return retval;
