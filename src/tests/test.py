@@ -93,7 +93,6 @@ def test_RSETEX(redis_service):
     redis_service.execute_command("SET", key, 1)
     redis_service.execute_command("RSETEX", key, value, ttl_ms)
     saved_ms = redis_service.execute_command("RTTL", key)
-    redis_service.execute_command("RSETEX", key, value, ttl_ms)
     saved_value = redis_service.execute_command("GET", key)
     if (not compare_ms(saved_ms, expected_ms)):
         sys.stdout.write("ERROR: expected {} but found {}\n".format(expected_ms, saved_ms))
@@ -108,6 +107,34 @@ def test_RSETEX(redis_service):
         retval = True
     
     return retval
+
+
+# 5. REXECEX {cmd} {key} {ttl_ms} {....}
+def test_REXECEX(redis_service):
+    retval = False
+    start_ts = current_time_ms()
+    ttl_ms = 10000
+    value = "test_value"
+    expected_ms = ttl_ms 
+    key = "set_get_test_key"
+    redis_service.execute_command("SET", key, 1)
+    redis_service.execute_command("REXECEX", "SET", key, ttl_ms, value)
+    saved_ms = redis_service.execute_command("RTTL", key)
+    saved_value = redis_service.execute_command("GET", key)
+    if (not compare_ms(saved_ms, expected_ms)):
+        sys.stdout.write("ERROR: expected {} but found {}\n".format(expected_ms, saved_ms))
+        retval = False
+    elif not saved_value:
+        sys.stdout.write("ERROR: expected {} but was not found\n".format(value))
+        retval = False
+    elif (saved_value != value):
+        sys.stdout.write("ERROR: expected {} but found {}\n".format(value, saved_value))
+        retval = False
+    else:
+        retval = True
+    
+    return retval
+
 
 
 def run_internal_test(redis_service):
@@ -151,6 +178,14 @@ def function_test_rtexp(redis_service):
 
     sys.stdout.write("\ntesting RSETEX: ")
     if (test_RSETEX(redis_service) == False):
+        num_of_FAILED_tests +=1
+        sys.stdout.write("FAILED\n")
+    else:
+        sys.stdout.write("PASSED\n")
+        num_of_passed_tests +=1
+
+    sys.stdout.write("\ntesting REXECEX: ")
+    if (test_REXECEX(redis_service) == False):
         num_of_FAILED_tests +=1
         sys.stdout.write("FAILED\n")
     else:

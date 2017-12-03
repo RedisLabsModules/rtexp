@@ -269,7 +269,6 @@ int ExecuteAndExpireCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int a
   RedisModuleString *element_key_str = argv[2];
   RedisModuleString *ttl_ms_str = argv[3];
 
-
   mstime_t ttl_ms;
   if (RedisModule_StringToLongLong(ttl_ms_str, &ttl_ms) == REDISMODULE_ERR) {
     RedisModule_ReplyWithError(ctx, "Timestamp must be parsable to type Long Long");
@@ -339,7 +338,7 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx) {
   RMUtil_RegisterWriteCmd(ctx, "RTTL", TTLCommand);
   RMUtil_RegisterWriteCmd(ctx, "RUNEXPIRE", UnexpireCommand);
   RMUtil_RegisterWriteCmd(ctx, "RSETEX", SetexCommand);
-  // RMUtil_RegisterWriteCmd(ctx, "REXECEX", ExecuteAndExpireCommand);
+  RMUtil_RegisterWriteCmd(ctx, "REXECEX", ExecuteAndExpireCommand);
 
   return REDISMODULE_OK;
 }

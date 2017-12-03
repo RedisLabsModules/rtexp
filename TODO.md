@@ -1,6 +1,6 @@
 # TBD
 
-- [ ] load test
+- [ ] Load test
 - [X] fix random crash issue with heap.c
 - [X] write documentation for lib
 - [X] write documentation for redis module
