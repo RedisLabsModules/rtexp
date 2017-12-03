@@ -51,10 +51,10 @@ void setNextTimerInterval(mstime_t interval_ms){
 }
 
 void timerCb(RedisModuleCtx *ctx, void *p) {
-  if (expiration_count(rtxStore) <= 0)
+  if (expiration_count(rtxStore) <= 0) {
     setNextTimerInterval(RTEXP_MAX_INTERVAL_NS);
     return;
-
+  }
 
   RedisModule_ThreadSafeContextLock(ctx);
   mstime_t now = rm_current_time_ms();
@@ -99,7 +99,7 @@ mstime_t get_ttl(RTXStore *store, char *element_key) {
  ************************/
 
 // 1. REXPIRE {key} {ttl_ms}
-int ExpireCommand(RedisModuleCtx *ctx, const RedisModuleString **argv, int argc) {
+int ExpireCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   if (argc != 3)
     RedisModule_WrongArity(ctx);
 
@@ -134,7 +134,7 @@ int ExpireCommand(RedisModuleCtx *ctx, const RedisModuleString **argv, int argc)
 }
 
 // 2. REXPIREAT {key} {timestamp_ms}
-int ExpireAtCommand(RedisModuleCtx *ctx, const RedisModuleString **argv, int argc) {
+int ExpireAtCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   if (argc != 3)
     RedisModule_WrongArity(ctx);
 
@@ -174,7 +174,7 @@ int ExpireAtCommand(RedisModuleCtx *ctx, const RedisModuleString **argv, int arg
 }
 
 // 3. RTTL {key}
-int TTLCommand(RedisModuleCtx *ctx, const RedisModuleString **argv, int argc) {
+int TTLCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   if (argc != 2)
     RedisModule_WrongArity(ctx);
   
@@ -195,7 +195,7 @@ int TTLCommand(RedisModuleCtx *ctx, const RedisModuleString **argv, int argc) {
 }
 
 // 4. RUNEXPIRE {key}
-int UnexpireCommand(RedisModuleCtx *ctx, const RedisModuleString **argv, int argc) {
+int UnexpireCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   if (argc != 2)
     RedisModule_WrongArity(ctx);
   
@@ -218,7 +218,7 @@ int UnexpireCommand(RedisModuleCtx *ctx, const RedisModuleString **argv, int arg
 }
 
 // 5. RSETEX {key} {value} {ttl}
-int SetexCommand(RedisModuleCtx *ctx, const RedisModuleString **argv, int argc) {
+int SetexCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   if (argc != 4)
     RedisModule_WrongArity(ctx);
   
@@ -262,7 +262,7 @@ int SetexCommand(RedisModuleCtx *ctx, const RedisModuleString **argv, int argc) 
 }
 
 // 6. REXECEX {key} {ttl} {....} - execute command, save result to key, and set expiration
-int ExecuteAndExpireCommand(RedisModuleCtx *ctx, const RedisModuleString **argv, int argc) {
+int ExecuteAndExpireCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   if (argc < 4) RedisModule_WrongArity(ctx);
   //
   // RedisModuleString *rtxstore_name = argv[1];
