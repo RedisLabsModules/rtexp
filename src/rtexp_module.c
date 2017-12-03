@@ -125,10 +125,10 @@ int ExpireCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
 
   // THE ACTUAL EXPIRATION 
   if (set_ttl(rtxStore, element_key, element_key_len, ttl_ms) == REDISMODULE_OK) {
-    RedisModule_ReplyWithLongLong(ctx, 1);
+    RedisModule_ReplyWithLongLong(ctx, 0);
     return REDISMODULE_OK;
   } else {
-    RedisModule_ReplyWithLongLong(ctx, 0);
+    RedisModule_ReplyWithLongLong(ctx, 1);
     return REDISMODULE_ERR;
   }
 }

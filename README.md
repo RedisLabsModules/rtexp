@@ -1,7 +1,29 @@
 # Redis Labs Realtime-Expiration Redis Module
 ## Overview:
-The perpose of this module is to simplify, improve and extend the expiration mechanism of redis elements for real-time applications. 
- 
+The perpose of this module is to simplify, improve and extend the 
+expiration mechanism of redis elements for real-time applications. 
+
+## Usage Example
+
+```
+> SET hello world
+OK
+> REXPIRE hello 10000
+(integer) 0
+> GET hello
+"world"
+...
+// Wait 9.99.. seconds
+> GET hello
+"world"
+...
+// And then..
+> GET hello
+(nil)
+
+```
+
+
 ## Commands:
 The API follows the vanilla Redis expiration API, denoting Real-Time with R as the prefix.
 
@@ -14,3 +36,5 @@ This module includes the following commands (See full documentation [here](docs/
 6. `REXECEX {CMD} {key} {ttl_ms} {....}` - Run CMD, set key to contain the result, and mark that key for auto expiration.
 
 The module commands provide no guarantees of duplication with normal expiration mechanisms.
+
+
