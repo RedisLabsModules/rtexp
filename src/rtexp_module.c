@@ -109,7 +109,7 @@ int ExpireCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   }
 
   size_t element_key_len;
-  char * element_key = RedisModule_StringPtrLen(argv[1], &element_key_len);
+  const char * element_key = RedisModule_StringPtrLen(argv[1], &element_key_len);
 
   RedisModuleString *ttl_ms_str = argv[2];
   mstime_t ttl_ms;
@@ -144,7 +144,7 @@ int ExpireAtCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   }
 
   size_t element_key_len;
-  char * element_key = RedisModule_StringPtrLen(argv[1], &element_key_len);
+  const char * element_key = RedisModule_StringPtrLen(argv[1], &element_key_len);
 
   RedisModuleString *timestamp_ms_str = argv[2];
   mstime_t timestamp_ms;
@@ -184,7 +184,7 @@ int TTLCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   }
 
   size_t element_key_len;
-  char * element_key = RedisModule_StringPtrLen(argv[1], &element_key_len);
+  const char * element_key = RedisModule_StringPtrLen(argv[1], &element_key_len);
 
   mstime_t stored_ttl = get_ttl(rtxStore, element_key);
   RedisModule_ReplyWithLongLong(ctx, stored_ttl);
@@ -205,7 +205,7 @@ int UnexpireCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   }
 
   size_t element_key_len;
-  char * element_key = RedisModule_StringPtrLen(argv[1], &element_key_len);
+  const char * element_key = RedisModule_StringPtrLen(argv[1], &element_key_len);
 
   if (redisSetPExpiration(ctx, argv[1], NULL) == REDISMODULE_ERR){
     RedisModule_ReplyWithLongLong(ctx, 0);
@@ -228,7 +228,7 @@ int SetexCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   }
 
   size_t element_key_len;
-  char * element_key = RedisModule_StringPtrLen(argv[1], &element_key_len);
+  const char * element_key = RedisModule_StringPtrLen(argv[1], &element_key_len);
 
   // RedisModuleString *element = argv[2];
   RedisModuleString *ttl_ms_str = argv[3];

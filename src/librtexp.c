@@ -72,8 +72,7 @@ int _is_valid_node(RTXStore* store, RTXElementNode* node) {
     return 0;
   }
   char* key = node->key;
-  TrieMap* t = store->element_node_map;
-  RTXExpiration* stored_node = TrieMap_Find(t, key, strlen(key));
+  RTXExpiration* stored_node = TrieMap_Find(store->element_node_map, key, strlen(key));
   if (stored_node != NULL && stored_node != TRIEMAP_NOTFOUND)
     return (node->exp.version == stored_node->version);
   else
@@ -84,9 +83,8 @@ int _is_valid_node(RTXStore* store, RTXElementNode* node) {
  * @return next valid element node, NULL if DS empty
  */
 RTXElementNode* _peek_next(RTXStore* store) {
-  heap_t* h = store->sorted_keys;
-  while (heap_count(h) != 0) {
-    RTXElementNode* node = heap_peek(h);
+  while (heap_count(store->sorted_keys) != 0) {
+    RTXElementNode* node = heap_peek(store->sorted_keys);
     // printf("peeked and saw:%s\n", node->key);
     if (_is_valid_node(store, node)) {
       return node;
@@ -114,20 +112,18 @@ RTXStore* newRTXStore(void) {
  * @return RTXS_OK on success, RTXS_ERR on error
  */
 int set_element_exp(RTXStore* store, char* key, size_t len, mstime_t ttl_ms) {
-  TrieMap* t = store->element_node_map;
   mstime_t timestamp_ms = current_time_ms() + ttl_ms;
   RTXExpiration* exp = malloc(sizeof(*exp)); 
   //printf("settting timestamp to be %llu\n", timestamp_ms);
   exp->time = timestamp_ms;
   exp->version = 0; 
   
-  int trie_result = TrieMap_Add(t, key, len, exp, _trie_node_updater);
+  int trie_result = TrieMap_Add(store->element_node_map, key, len, exp, _trie_node_updater);
   
   // EXP's version was updated by the trie updater callback
   RTXElementNode *node = newRTXElementNode(key, len, exp->time, exp->version);
 
-  heap_t* h = store->sorted_keys;
-  int heap_result = heap_offer(&h, node);
+  int heap_result = heap_offer(&store->sorted_keys, node);
   if (heap_result != 0) {  // we failed inserting into the heap, back out of everything
     // TODO: for now let's (wrongly) assume we will not get here and just return with error, but
     //       this needs writing
@@ -141,8 +137,7 @@ int set_element_exp(RTXStore* store, char* key, size_t len, mstime_t ttl_ms) {
  * @return datetime of expiration (in milliseconds) on success, -1 on error
  */
 mstime_t get_element_exp(RTXStore* store, char* key) {
-  TrieMap* t = store->element_node_map;
-  RTXExpiration* exp = TrieMap_Find(t, key, strlen(key));
+  RTXExpiration* exp = TrieMap_Find(store->element_node_map, key, strlen(key));
   if (exp != NULL && exp != TRIEMAP_NOTFOUND) {
     return exp->time;
   }
