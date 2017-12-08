@@ -1,5 +1,6 @@
 #include "librtexp.h"
 #include "redismodule.h"
+#include <math.h>
 #include "rmutil/util.h"
 #include "rmutil/strings.h"
 #include "rmutil/periodic.h"
@@ -8,7 +9,15 @@
 #define REDIS_MODULE_TARGET
 #include "util/rmalloc.h"
 
-#define RTEXP_BUFFER_MS 5
+#define PROFILE_RESOLUTION 100 // bad name.. the lower the number, the more samples are taken 
+
+#ifdef PROFILE_RESOLUTION
+#define PROFILE_STORE_SIZE 20
+int profile_timer_count;
+int profiling_array[PROFILE_STORE_SIZE];
+#endif
+
+#define RTEXP_BUFFER_MS 1
 #define RTEXP_MIN_INTERVAL_NS 250 // =0.25 microsecond (10^-6) scale. existing Expire is on milliseconds (10^-3) scale
 #define RTEXP_MAX_INTERVAL_NS 10000000 // = 10 millisecond (0.01 second) scale
 
@@ -58,6 +67,15 @@ void timerCb(RedisModuleCtx *ctx, void *p) {
 
   mstime_t next = next_at(rtxStore);
   while (next > 0 && to_ns(next) < (now_ns+RTEXP_MIN_INTERVAL_NS)) {
+    #ifdef PROFILE_RESOLUTION
+      if (profile_timer_count % PROFILE_RESOLUTION == 0) {
+        mstime_t profile_slot = abs(next-current_time_ms());
+        profile_slot = fmax(0,profile_slot);
+        profile_slot = fmin(profile_slot,PROFILE_STORE_SIZE);
+        profiling_array[profile_slot] += 1;
+      }
+      profile_timer_count += 1;
+    #endif
     RTXElementNode* node = pop_next(rtxStore);    
     if (node != NULL) {
       RedisModule_Call(ctx, "UNLINK", "c", node->key);
@@ -309,7 +327,12 @@ int ExecuteAndExpireCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int a
 
 int CreateRTEXP() {
   RedisModuleCtx *ctx = RedisModule_GetThreadSafeContext(NULL);
-  
+  #ifdef PROFILE_RESOLUTION
+  profile_timer_count = 0;
+  int i;
+  for (i=0; i< PROFILE_STORE_SIZE; ++i)
+    profiling_array[i] = 0;
+  #endif
   rtxStore = newRTXStore();
   interval_timer = RMUtil_NewPeriodicTimer( 
       timerCb, NULL, &rtxStore,
@@ -319,6 +342,25 @@ int CreateRTEXP() {
 
   return REDISMODULE_OK;
 }
+
+int OutstandingTimerCountCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+  RedisModule_ReplyWithLongLong(ctx, expiration_count(rtxStore));
+  return REDISMODULE_OK;
+}
+
+#ifdef PROFILE_RESOLUTION
+int PrintProfileCommand (RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+  int i;
+  // int found_non_zero = 0;
+  // for (i=0; ((i< PROFILE_RESOLUTION) && (!found_non_zero)); ++i)
+  //   found_non_zero = profiling_array[i];
+  for (i=0; i< PROFILE_STORE_SIZE; ++i)
+    printf("%d: %d\n",i, profiling_array[i]);
+  RedisModule_ReplyWithSimpleString(ctx, "OK");
+  return REDISMODULE_OK;
+}
+#endif
+
 
 // Init Module
 int RedisModule_OnLoad(RedisModuleCtx *ctx) {
@@ -339,6 +381,9 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx) {
   RMUtil_RegisterWriteCmd(ctx, "RUNEXPIRE", UnexpireCommand);
   RMUtil_RegisterWriteCmd(ctx, "RSETEX", SetexCommand);
   RMUtil_RegisterWriteCmd(ctx, "REXECEX", ExecuteAndExpireCommand);
-
+  #ifdef PROFILE_RESOLUTION
+    RMUtil_RegisterWriteCmd(ctx, "RPROFILE", PrintProfileCommand);
+  #endif
+  RMUtil_RegisterWriteCmd(ctx, "RCOUNT", OutstandingTimerCountCommand);
   return REDISMODULE_OK;
 }

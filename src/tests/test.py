@@ -20,7 +20,7 @@ def test_REXPIRE_RTTL(redis_service):
     ttl_ms = 10000
     start_ts = current_time_ms()
     div = random.randint(0,ttl_ms/2)
-    
+
     key = "set_get_test_key"
     redis_service.execute_command("SET", key, 1)
     redis_service.execute_command("REXPIRE", key, ttl_ms)
@@ -88,7 +88,7 @@ def test_RSETEX(redis_service):
     start_ts = current_time_ms()
     ttl_ms = 10000
     value = "test_value"
-    expected_ms = ttl_ms 
+    expected_ms = ttl_ms
     key = "set_get_test_key"
     redis_service.execute_command("SET", key, 1)
     redis_service.execute_command("RSETEX", key, value, ttl_ms)
@@ -105,7 +105,7 @@ def test_RSETEX(redis_service):
         retval = False
     else:
         retval = True
-    
+
     return retval
 
 
@@ -115,7 +115,7 @@ def test_REXECEX(redis_service):
     start_ts = current_time_ms()
     ttl_ms = 10000
     value = "test_value"
-    expected_ms = ttl_ms 
+    expected_ms = ttl_ms
     key = "set_get_test_key"
     redis_service.execute_command("SET", key, 1)
     redis_service.execute_command("REXECEX", "SET", key, ttl_ms, value)
@@ -132,7 +132,7 @@ def test_REXECEX(redis_service):
         retval = False
     else:
         retval = True
-    
+
     return retval
 
 
@@ -167,7 +167,7 @@ def function_test_rtexp(redis_service):
     else:
         sys.stdout.write("PASSED\n")
         num_of_passed_tests +=1
-  
+
     sys.stdout.write("\ntesting RUNEXPIRE: ")
     if (test_RUNEXPIRE(redis_service) == False):
         num_of_FAILED_tests +=1
@@ -201,67 +201,45 @@ def function_test_rtexp(redis_service):
         sys.stdout.write("OK ({} tests passed in {} sec)\n".format(num_of_passed_tests, total_time_ms / 1000))
         return True
 
-def load_test_rtexp(redis_service, cycles=1000000, timeouts=[1,2,4,16,32,100,200,1000]):
-    redis_service.execute_command("DEL", "python_load_test_rtexp")
+# def load_test_rtexp(redis_service, timers=1000000, timeouts=[1,2,4,16,32,100,200,1000,2000,4000]):
+def load_test_rtexp(redis_service, timers=1000000, timeouts=[100, 200, 1000, 2000, 4000, 10000]):
     print "starting load tests"
-    print "UNIMPLEMENTED!"
+    start = time.time()
+    for i in range(timers):
+        if (i%100000 == 0):
+            print "set {} timers".format(i)
+        ttl_ms = random.choice(timeouts)
+        key = "timer_{}_for_{}_ms".format(i, ttl_ms)
+        redis_service.execute_command("SET", key, 1)
+        redis_service.execute_command("REXPIRE", key, ttl_ms)
+
+    timer_count = redis_service.execute_command("RCOUNT")
+    while (timer_count):
+        print "Done setting timers, waiting for remaining {} to expire".format(redis_service.execute_command("RCOUNT"))
+        time.sleep(5)
+        timer_count = redis_service.execute_command("RCOUNT")
+
+    end = time.time()
+    print "All timers expired, printing results"
+    redis_service.execute_command("RPROFILE")
+    print "mesured {} timers in {} sec".format(timers, end-start)
     return True
 
-    print "measuring PUSH"
-    start = time.time()
-    # test push
-    for i in range(cycles):
-        redis_service.execute_command("push", "python_load_test_rtexp", random.choice(timeouts)*1000, "payload", "%d" % i)
-    push_end = time.time()
-
-
-    print "measuring GIDPUSH (auto generating ids)"
-    # test push
-    for i in range(cycles):
-        redis_service.execute_command("gidpush", "python_load_test_rtexp", random.choice(timeouts)*1000, "payload")
-    gid_push_end = time.time()
-
-
-    print "measuring PULL"
-    for i in range(cycles):
-        redis_service.execute_command("pull", "python_load_test_rtexp", "%d" % i)
-    pull_end = time.time()
-
-    print "preparing POLL"
-    start_i = 0
-    end_i = cycles/3
-    for j in range(3):
-        for i in range(start_i,end_i):
-            redis_service.execute_command("push", "python_load_test_rtexp", "%d" % i, "payload", 1000*(3-j+random.choice([1,2,3])))
-        start_i += cycles/3
-        end_i += cycles/3
-        time.sleep(1)
-
-    print "measuring POLL"
-    poll_sum = 0
-    for j in range(10):
-        time.sleep(1)
-        poll_start = time.time()
-        redis_service.execute_command("poll", "python_load_test_rtexp")
-        poll_end = time.time()
-        poll_sum += poll_end-poll_start
-
-    print "mean push velocity =", cycles/(push_end-start), "per second"
-    print "mean push(generating ids) velocity =", cycles/(gid_push_end-push_end), "per second"
-    print "mean pull velocity =", cycles/(pull_end-gid_push_end), "per second"
-    print "mean poll velocity = ", cycles/poll_sum, "per second"
-    redis_service.execute_command("DEL", "python_load_test_rtexp")
+    # print "mean push velocity =", cycles/(push_end-start), "per second"
+    # print "mean push(generating ids) velocity =", cycles/(gid_push_end-push_end), "per second"
+    # print "mean pull velocity =", cycles/(pull_end-gid_push_end), "per second"
+    # print "mean poll velocity = ", cycles/poll_sum, "per second"
 
 if __name__ == "__main__":
     args = sys.argv[1:]
     test_internal = False
-    test_external = True
+    test_external = False
     load_test = False
     port = 6379
     if not args:
-        test_internal = False # TODO: True
+        test_internal = False # TODO: True?
         test_external = True
-        load_test = False # TODO: True
+        load_test = True
     else:
         for i, arg in enumerate(args):
             if arg == "--port":
@@ -278,7 +256,7 @@ if __name__ == "__main__":
                 test_external = True
 
     print "port", port
-    r = redis.StrictRedis(host='localhost', port=port, db=0)    
+    r = redis.StrictRedis(host='localhost', port=port, db=0)
     if test_internal:
         run_internal_test(r)
     if test_external:
