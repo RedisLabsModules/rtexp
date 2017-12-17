@@ -9,17 +9,17 @@
 #define REDIS_MODULE_TARGET
 #include "util/rmalloc.h"
 
-#define PROFILE_RESOLUTION 100 // bad name.. the lower the number, the more samples are taken 
+#define PROFILE_GRANULARITY 10 // the lower the number, the more samples are taken 
 
-#ifdef PROFILE_RESOLUTION
-#define PROFILE_STORE_SIZE 20
+#ifdef PROFILE_GRANULARITY
+#define PROFILE_STORE_SIZE 13
 int profile_timer_count;
 int profiling_array[PROFILE_STORE_SIZE];
 #endif
 
 #define RTEXP_BUFFER_MS 1
-#define RTEXP_MIN_INTERVAL_NS 250 // =0.25 microsecond (10^-6) scale. existing Expire is on milliseconds (10^-3) scale
-#define RTEXP_MAX_INTERVAL_NS 10000000 // = 10 millisecond (0.01 second) scale
+#define RTEXP_MIN_INTERVAL_NS 100 // =0.15 microsecond (10^-6) scale. existing Expire is on milliseconds (10^-3) scale
+#define RTEXP_MAX_INTERVAL_NS 900000 // = 0.9 millisecond (0.0009 second) scale
 
 static RTXStore *rtxStore;
 static struct RMUtilTimer *interval_timer;
@@ -67,18 +67,18 @@ void timerCb(RedisModuleCtx *ctx, void *p) {
 
   mstime_t next = next_at(rtxStore);
   while (next > 0 && to_ns(next) < (now_ns+RTEXP_MIN_INTERVAL_NS)) {
-    #ifdef PROFILE_RESOLUTION
-      if (profile_timer_count % PROFILE_RESOLUTION == 0) {
+    RTXElementNode* node = pop_next(rtxStore);    
+    if (node != NULL) {
+      RedisModule_Call(ctx, "UNLINK", "c", node->key);
+      #ifdef PROFILE_GRANULARITY
+      if (profile_timer_count % PROFILE_GRANULARITY == 0) {
         mstime_t profile_slot = abs(next-current_time_ms());
         profile_slot = fmax(0,profile_slot);
         profile_slot = fmin(profile_slot,PROFILE_STORE_SIZE);
         profiling_array[profile_slot] += 1;
       }
       profile_timer_count += 1;
-    #endif
-    RTXElementNode* node = pop_next(rtxStore);    
-    if (node != NULL) {
-      RedisModule_Call(ctx, "UNLINK", "c", node->key);
+      #endif
       freeRTXElementNode(node);
     }
     next = next_at(rtxStore);
@@ -327,7 +327,7 @@ int ExecuteAndExpireCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int a
 
 int CreateRTEXP() {
   RedisModuleCtx *ctx = RedisModule_GetThreadSafeContext(NULL);
-  #ifdef PROFILE_RESOLUTION
+  #ifdef PROFILE_GRANULARITY
   profile_timer_count = 0;
   int i;
   for (i=0; i< PROFILE_STORE_SIZE; ++i)
@@ -348,11 +348,11 @@ int OutstandingTimerCountCommand(RedisModuleCtx *ctx, RedisModuleString **argv, 
   return REDISMODULE_OK;
 }
 
-#ifdef PROFILE_RESOLUTION
+#ifdef PROFILE_GRANULARITY
 int PrintProfileCommand (RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   int i;
   // int found_non_zero = 0;
-  // for (i=0; ((i< PROFILE_RESOLUTION) && (!found_non_zero)); ++i)
+  // for (i=0; ((i< PROFILE_GRANULARITY) && (!found_non_zero)); ++i)
   //   found_non_zero = profiling_array[i];
   for (i=0; i< PROFILE_STORE_SIZE; ++i)
     printf("%d: %d\n",i, profiling_array[i]);
@@ -381,7 +381,7 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx) {
   RMUtil_RegisterWriteCmd(ctx, "RUNEXPIRE", UnexpireCommand);
   RMUtil_RegisterWriteCmd(ctx, "RSETEX", SetexCommand);
   RMUtil_RegisterWriteCmd(ctx, "REXECEX", ExecuteAndExpireCommand);
-  #ifdef PROFILE_RESOLUTION
+  #ifdef PROFILE_GRANULARITY
     RMUtil_RegisterWriteCmd(ctx, "RPROFILE", PrintProfileCommand);
   #endif
   RMUtil_RegisterWriteCmd(ctx, "RCOUNT", OutstandingTimerCountCommand);

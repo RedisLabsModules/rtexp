@@ -201,8 +201,7 @@ def function_test_rtexp(redis_service):
         sys.stdout.write("OK ({} tests passed in {} sec)\n".format(num_of_passed_tests, total_time_ms / 1000))
         return True
 
-# def load_test_rtexp(redis_service, timers=1000000, timeouts=[1,2,4,16,32,100,200,1000,2000,4000]):
-def load_test_rtexp(redis_service, timers=1000000, timeouts=[100, 200, 1000, 2000, 4000, 10000]):
+def load_test_rtexp(redis_service, timers=1000000, timeouts=[1, 10000]):#, 2, 4, 16, 32, 100, 200, 1000, 2000, 4000, 10000]):
     print "starting load tests"
     start = time.time()
     for i in range(timers):
