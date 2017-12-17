@@ -201,7 +201,7 @@ def function_test_rtexp(redis_service):
         sys.stdout.write("OK ({} tests passed in {} sec)\n".format(num_of_passed_tests, total_time_ms / 1000))
         return True
 
-def load_test_rtexp(redis_service, timers=1000000, timeouts=[1, 10000]):#, 2, 4, 16, 32, 100, 200, 1000, 2000, 4000, 10000]):
+def load_test_rtexp(redis_service, timers=1000000, timeouts=[1, 10000]):##, 2, 4, 16, 32, 100, 200, 1000, 2000, 4000, 10000]):
     print "starting load tests"
     start = time.time()
     for i in range(timers):
@@ -212,11 +212,11 @@ def load_test_rtexp(redis_service, timers=1000000, timeouts=[1, 10000]):#, 2, 4,
         redis_service.execute_command("SET", key, 1)
         redis_service.execute_command("REXPIRE", key, ttl_ms)
 
-    timer_count = redis_service.execute_command("RCOUNT")
-    while (timer_count):
-        print "Done setting timers, waiting for remaining {} to expire".format(redis_service.execute_command("RCOUNT"))
-        time.sleep(5)
-        timer_count = redis_service.execute_command("RCOUNT")
+    # timer_count = redis_service.execute_command("RCOUNT")
+    # while (timer_count):
+    #     print "Done setting timers, waiting for remaining {} to expire".format(redis_service.execute_command("RCOUNT"))
+    #     time.sleep(5)
+    #     timer_count = redis_service.execute_command("RCOUNT")
 
     end = time.time()
     print "All timers expired, printing results"

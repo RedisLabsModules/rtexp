@@ -1,4 +1,4 @@
-#include "librtexp.h"
+#include "lawn.h"
 #include "redismodule.h"
 #include <math.h>
 #include "rmutil/util.h"
@@ -21,7 +21,7 @@ int profiling_array[PROFILE_STORE_SIZE];
 #define RTEXP_MIN_INTERVAL_NS 100 // =0.15 microsecond (10^-6) scale. existing Expire is on milliseconds (10^-3) scale
 #define RTEXP_MAX_INTERVAL_NS 900000 // = 0.9 millisecond (0.0009 second) scale
 
-static RTXStore *rtxStore;
+static Lawn *rtxStore;
 static struct RMUtilTimer *interval_timer;
 
 typedef long long nstime_t;
@@ -67,9 +67,9 @@ void timerCb(RedisModuleCtx *ctx, void *p) {
 
   mstime_t next = next_at(rtxStore);
   while (next > 0 && to_ns(next) < (now_ns+RTEXP_MIN_INTERVAL_NS)) {
-    RTXElementNode* node = pop_next(rtxStore);    
+    ElementQueueNode* node = pop_next(rtxStore);
     if (node != NULL) {
-      RedisModule_Call(ctx, "UNLINK", "c", node->key);
+      RedisModule_Call(ctx, "UNLINK", "c", node->element);
       #ifdef PROFILE_GRANULARITY
       if (profile_timer_count % PROFILE_GRANULARITY == 0) {
         mstime_t profile_slot = abs(next-current_time_ms());
@@ -79,7 +79,7 @@ void timerCb(RedisModuleCtx *ctx, void *p) {
       }
       profile_timer_count += 1;
       #endif
-      freeRTXElementNode(node);
+      freeNode(node);
     }
     next = next_at(rtxStore);
   }
@@ -94,16 +94,16 @@ void timerCb(RedisModuleCtx *ctx, void *p) {
  *    DS Binding
  ********************/
 
-int set_ttl(RTXStore *store, char *element_key, size_t len, mstime_t ttl_ms) {
+int set_ttl(Lawn *store, char *element_key, size_t len, mstime_t ttl_ms) {
   setNextTimerInterval(ttl_ms);
-  return set_element_exp(store, element_key, len, ttl_ms);
+  return set_element_ttl(store, element_key, len, ttl_ms);
 }
 
-int remove_expiration(RTXStore *store, char *element_key) {
+int remove_expiration(Lawn *store, char *element_key) {
   return del_element_exp(store, element_key);
 }
 
-mstime_t get_ttl(RTXStore *store, char *element_key) {
+mstime_t get_ttl(Lawn *store, char *element_key) {
   mstime_t timestamp_ms = get_element_exp(store, element_key);
   if (timestamp_ms != -1) {
     mstime_t now = rm_current_time_ms();
@@ -333,7 +333,7 @@ int CreateRTEXP() {
   for (i=0; i< PROFILE_STORE_SIZE; ++i)
     profiling_array[i] = 0;
   #endif
-  rtxStore = newRTXStore();
+  rtxStore = newLawn();
   interval_timer = RMUtil_NewPeriodicTimer( 
       timerCb, NULL, &rtxStore,
       (struct timespec){
@@ -344,7 +344,7 @@ int CreateRTEXP() {
 }
 
 int OutstandingTimerCountCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
-  RedisModule_ReplyWithLongLong(ctx, expiration_count(rtxStore));
+  RedisModule_ReplyWithLongLong(ctx, timer_count(rtxStore));
   return REDISMODULE_OK;
 }
 
