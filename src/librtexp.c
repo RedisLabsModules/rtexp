@@ -180,7 +180,7 @@ RTXElementNode* pop_next(RTXStore* store) {
   RTXElementNode* node = _peek_next(store);
   if (node != NULL) {  // a non empty DS
     node = heap_poll(store->sorted_keys);
-    TrieMap_Delete(store->element_node_map, node->key, strlen(node->key), _voidCB);
+    TrieMap_Delete(store->element_node_map, node->key, node->len, _voidCB);
     return node;
   }
   return NULL;
