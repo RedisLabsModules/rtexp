@@ -9,18 +9,6 @@
 
 #define DEFAULT_CAPACITY 13
 
-struct heap_s
-{
-    /* size of array */
-    unsigned int size;
-    /* items within heap */
-    unsigned int count;
-    /**  user data */
-    const void *udata;
-    int (*cmp) (const void *, const void *, const void *);
-    void * array[];
-};
-
 size_t heap_sizeof(unsigned int size)
 {
     return sizeof(heap_t) + size * sizeof(void *);

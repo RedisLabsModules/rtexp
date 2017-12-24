@@ -2,7 +2,21 @@
 #define HEAP_H
 #include <stdlib.h>
 
-typedef struct heap_s heap_t;
+
+
+typedef struct heap_s
+{
+    /* size of array */
+    unsigned int size;
+    /* items within heap */
+    unsigned int count;
+    /**  user data */
+    const void *udata;
+    int (*cmp) (const void *, const void *, const void *);
+    void * array[];
+} heap_t;
+
+ 
 
 /**
  * Create new heap and initialise it.

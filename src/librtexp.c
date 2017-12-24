@@ -31,14 +31,15 @@ void freeRTXElementNode(RTXElementNode* node) {
 }
 
 size_t expiration_count(RTXStore* store){
-  if (store)
-    return heap_count(store->sorted_keys);    
+  if (store){
+    return store->sorted_keys->count;
+  }
   return 0;
 }
 
 void RTXStore_Free(RTXStore* store) {
   TrieMap_Free(store->element_node_map, NULL);
-  while (heap_count(store->sorted_keys) != 0) {
+  while (store->sorted_keys->count != 0) {
     RTXElementNode* node = heap_poll(store->sorted_keys);
     freeRTXElementNode(node);
   }  
@@ -61,7 +62,11 @@ void* _trie_node_updater(void* oldval, void* newval) {
 
 int _cmp_node(const void* node_a, const void* node_b, const void* udata) {
   const RTXElementNode *a=node_a, *b=node_b;
-  return b->exp.time - a->exp.time;
+  if (b->exp.time < a->exp.time)
+    return -1;
+  else if (b->exp.time > a->exp.time)
+    return 1;
+  return 0;
 }
 
 /*
@@ -83,7 +88,7 @@ int _is_valid_node(RTXStore* store, RTXElementNode* node) {
  * @return next valid element node, NULL if DS empty
  */
 RTXElementNode* _peek_next(RTXStore* store) {
-  while (heap_count(store->sorted_keys) != 0) {
+  while (store->sorted_keys->count != 0) {
     RTXElementNode* node = heap_peek(store->sorted_keys);
     // printf("peeked and saw:%s\n", node->key);
     if (_is_valid_node(store, node)) {

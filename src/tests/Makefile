@@ -30,9 +30,9 @@ TEST_DEPS = $(patsubst %.c, %.d,$(TEST_SOURCES))
 DEP_LIBS = ../rmutil/librmutil.a ../trie/libtriemap.a 
 DEPS = $(DEP_OBJECTS) $(DEP_LIBS)
 SRCDIR := $(shell pwd)
-LDFLAGS :=  -lc -lm -ldl -lpthread 
+LDFLAGS :=  -lc -lm -ldl -lpthread -pg
 
-CC=gcc
+CC=gcc -pg -no-pie
 
 %.o: %.c
 %.o: %.c

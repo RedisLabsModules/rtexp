@@ -9,7 +9,7 @@
 #define REDIS_MODULE_TARGET
 #include "util/rmalloc.h"
 
-#define PROFILE_GRANULARITY 10 // the lower the number, the more samples are taken 
+// #define PROFILE_GRANULARITY 10 // the lower the number, the more samples are taken 
 
 #ifdef PROFILE_GRANULARITY
 #define PROFILE_STORE_SIZE 13
@@ -18,7 +18,8 @@ int profiling_array[PROFILE_STORE_SIZE];
 #endif
 
 #define RTEXP_BUFFER_MS 1
-#define RTEXP_MIN_INTERVAL_NS 100 // =0.15 microsecond (10^-6) scale. existing Expire is on milliseconds (10^-3) scale
+#define RTEXP_MIN_INTERVAL_NS 100 // =0.1 microsecond (10^-6 second) scale. 
+                                  //      Existing Expire is on milliseconds (10^-3 second) scale
 #define RTEXP_MAX_INTERVAL_NS 900000 // = 0.9 millisecond (0.0009 second) scale
 
 static RTXStore *rtxStore;
@@ -72,7 +73,7 @@ void timerCb(RedisModuleCtx *ctx, void *p) {
       RedisModule_Call(ctx, "UNLINK", "c", node->key);
       #ifdef PROFILE_GRANULARITY
       if (profile_timer_count % PROFILE_GRANULARITY == 0) {
-        mstime_t profile_slot = abs(next-current_time_ms());
+        mstime_t profile_slot = abs(next-rm_current_time_ms());
         profile_slot = fmax(0,profile_slot);
         profile_slot = fmin(profile_slot,PROFILE_STORE_SIZE);
         profiling_array[profile_slot] += 1;
@@ -348,18 +349,17 @@ int OutstandingTimerCountCommand(RedisModuleCtx *ctx, RedisModuleString **argv, 
   return REDISMODULE_OK;
 }
 
-#ifdef PROFILE_GRANULARITY
+
 int PrintProfileCommand (RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+#ifdef PROFILE_GRANULARITY
   int i;
-  // int found_non_zero = 0;
-  // for (i=0; ((i< PROFILE_GRANULARITY) && (!found_non_zero)); ++i)
-  //   found_non_zero = profiling_array[i];
   for (i=0; i< PROFILE_STORE_SIZE; ++i)
     printf("%d: %d\n",i, profiling_array[i]);
+#endif
   RedisModule_ReplyWithSimpleString(ctx, "OK");
   return REDISMODULE_OK;
 }
-#endif
+
 
 
 // Init Module
@@ -381,9 +381,8 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx) {
   RMUtil_RegisterWriteCmd(ctx, "RUNEXPIRE", UnexpireCommand);
   RMUtil_RegisterWriteCmd(ctx, "RSETEX", SetexCommand);
   RMUtil_RegisterWriteCmd(ctx, "REXECEX", ExecuteAndExpireCommand);
-  #ifdef PROFILE_GRANULARITY
-    RMUtil_RegisterWriteCmd(ctx, "RPROFILE", PrintProfileCommand);
-  #endif
   RMUtil_RegisterWriteCmd(ctx, "RCOUNT", OutstandingTimerCountCommand);
+
+  RMUtil_RegisterWriteCmd(ctx, "RPROFILE", PrintProfileCommand);
   return REDISMODULE_OK;
 }

@@ -12,13 +12,13 @@ ifeq ($(DEBUG), 1)
 endif
 
 # Default CFLAGS
-CFLAGS= -Wall -Wno-unused-function -Wno-unused-variable -Wno-unused-result -fPIC \
+CFLAGS= -pg -no-pie -lprofiler -Wall -Wno-unused-function -Wno-unused-variable -Wno-unused-result -fPIC \
  	-D_GNU_SOURCE -std=gnu99 -I"$(shell pwd)" -DREDISMODULE_EXPERIMENTAL_API 
 CFLAGS += $(DEBUGFLAGS)
 
 # Compile flags for linux / osx
 ifeq ($(uname_S),Linux)
-	SHOBJ_LDFLAGS ?= -shared -Bsymbolic -Bsymbolic-functions -ldl -lpthread
+	SHOBJ_LDFLAGS ?= -shared -Bsymbolic -Bsymbolic-functions -ldl -lpthread -lprofiler
 else
 	CFLAGS += -mmacosx-version-min=10.6
 	SHOBJ_LDFLAGS ?= -macosx_version_min 10.6 -exported_symbol _RedisModule_OnLoad -bundle -undefined dynamic_lookup -ldl -lpthread
@@ -70,12 +70,6 @@ $(LIBTRIE):
 $(LIBTRIEMAP):
 	$(MAKE) -C trie 
 .PHONY: $(LIBTRIEMAP)
-$(LIBSTEMMER):
-	$(MAKE) -C dep/snowball libstemmer.o
-.PHONY: $(LIBSTEMMER)
-$(LIBNU):
-	$(MAKE) -C dep/libnu
-.PHONY: $(LIBNU)
 
 
 build_tests: rtexp.so rtexp_module.so 
@@ -94,7 +88,7 @@ buildall:  rtexp.so rtexp_module.so build_tests
 rtexp_module.so: $(MODULE) version.h
 	# Just to make sure old versions of the modules are deleted
 	rm -f rtexp_module.so
-	$(LD) -o $@ $(MODULE) $(SHOBJ_LDFLAGS) -lc -lm 
+	$(LD) -o $@ $(MODULE) $(SHOBJ_LDFLAGS) -lc -lm
 
 # Build the lib...
 rtexp.so: $(MODULE)
