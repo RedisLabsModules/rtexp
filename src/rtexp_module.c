@@ -1,4 +1,4 @@
-#include "librtexp.h"
+	#include "librtexp.h"
 #include "redismodule.h"
 #include <math.h>
 #include "rmutil/util.h"
@@ -70,7 +70,11 @@ void timerCb(RedisModuleCtx *ctx, void *p) {
   while (next > 0 && to_ns(next) < (now_ns+RTEXP_MIN_INTERVAL_NS)) {
     RTXElementNode* node = pop_next(rtxStore);    
     if (node != NULL) {
-      RedisModule_Call(ctx, "UNLINK", "c", node->key);
+      RedisModuleString *key_str = RedisModule_CreateString(ctx, node->key, node->len);
+      RedisModuleKey *key = RedisModule_OpenKey(ctx, key_str, REDISMODULE_READ | REDISMODULE_WRITE);
+      RedisModule_UnlinkKey(key);
+      RedisModule_CloseKey(key);
+      
       #ifdef PROFILE_GRANULARITY
       if (profile_timer_count % PROFILE_GRANULARITY == 0) {
         mstime_t profile_slot = abs(next-rm_current_time_ms());
