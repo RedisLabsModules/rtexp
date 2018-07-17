@@ -38,3 +38,7 @@ This module includes the following commands (See full documentation [here](docs/
 The module commands provide no guarantees of duplication with normal expiration mechanisms.
 
 
+## License
+
+Apache 2.0 with Commons Clause - see [LICENSE](LICENSE)
+
